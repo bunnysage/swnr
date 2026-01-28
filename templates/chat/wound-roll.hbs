@@ -1,0 +1,49 @@
+<div class="swnr chat-message injury-message">
+  <div class="critical-hit-banner">
+    <i class="fas fa-skull-crossbones"></i>
+    {{localize 'swnr.chat.criticalInjury'}}
+  </div>
+
+  <div class="message-content">
+    <div class="injury-location">
+      <i class="fas fa-{{locationIcon}} location-icon"></i>
+      <strong>{{localize 'swnr.injury.location'}}:</strong> {{location}}
+    </div>
+
+    <div class="severity-section">
+      <h4 class="severity-total">
+        <i class="fas fa-dice-d20"></i>
+        {{localize 'swnr.injury.severity'}} {{severity}}
+      </h4>
+      <div class="dice-calculation">
+        <div class="dice-formula">
+          1d12: [{{severityRoll}}] + {{injuryContribution}} ({{injuries}} {{localize 'swnr.injury.injuries'}} × 2) + {{excessDamage}} (excess damage) - {{critResistance}} (CR) = {{severity}}
+        </div>
+      </div>
+    </div>
+
+    <div class="counters-update">
+      <table>
+        <tr>
+          <td><strong>{{localize 'swnr.injury.injuries'}}:</strong></td>
+          <td>{{injuryBefore}} → {{injuryAfter}}</td>
+        </tr>
+        <tr>
+          <td><strong>{{localize 'swnr.injury.wounds'}}:</strong></td>
+          <td>{{woundBefore}} → {{woundAfter}}</td>
+        </tr>
+      </table>
+    </div>
+
+    {{#if effectDescription}}
+    <div class="effect-description">
+      <i class="fas fa-exclamation-triangle effect-icon"></i>
+      {{effectDescription}}
+    </div>
+    {{/if}}
+
+    <div class="actor-status">
+      <strong>{{actor.name}}</strong> {{localize 'swnr.injury.nowAt'}} 0 {{localize 'swnr.injury.hp'}}
+    </div>
+  </div>
+</div> 

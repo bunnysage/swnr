@@ -50,8 +50,8 @@
               class='nested-field short-field'
             />
         </div>
-    </div>
-
+        </div>
+    
     {{#if (eq actor.type 'character')}}
     <div class="resource-bar"><!-- The character strain bar -->
       <div style="width:{{system.systemStrain.percentage}}%" class="strain-fill"></div>
@@ -195,11 +195,33 @@
         </label>
       </div>
 
+      {{#if (eq actor.type 'character')}}
+        {{#if (eq gameSettings.useDeathAndDismemberment true)}}
+        <div class="resource flex-group-center">
+          <div class="field resource-content">
+            <input
+              type='number'
+              name='system.injuries'
+              value='{{system.injuries}}'
+              data-dtype='Number'
+              class='nested-field header'
+            />
+            <span class="nested-sep">/</span>
+            <input
+              type='number'
+              name='system.wounds'
+              value='{{system.wounds}}'
+              data-dtype='Number'
+              class='nested-field header'
+            />
+          </div>
+          <label class='resource-label'>Inj/Wnd</label>
+        </div>
+        {{/if}}
+      {{/if}}
     
       {{#if (eq actor.type 'npc')}}
-      {{formGroup systemFields.species value=system.species localize=true widget=headerWidget}}
-      {{formGroup systemFields.homeworld value=system.homeworld localize=true widget=headerWidget}}
-
+      
       {{/if}}
 
       {{#if (eq gameSettings.showAccess true)}}

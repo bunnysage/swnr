@@ -132,6 +132,15 @@ export const registerSettings = function () {
     default: false,
   });
 
+  game.settings.register("swnr", "useDeathAndDismemberment", {
+    name: "swnr.settings.useDeathAndDismemberment",
+    hint: "swnr.settings.useDeathAndDismembermentHint",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: false,
+  });
+
   game.settings.register("swnr", "useCWNArmor", {
     name: "swnr.settings.useCWNArmor",
     hint: "swnr.settings.useCWNArmorHint",
@@ -343,6 +352,7 @@ export const getGameSettings = function () {
     useAWNVehicle: game.settings.get("swnr", "useAWNVehicle"),
     useAWNGearCondition: game.settings.get("swnr", "useAWNGearCondition"),
     showAccess: game.settings.get("swnr", "showAccess"),
+    useDeathAndDismemberment: game.settings.get("swnr", "useDeathAndDismemberment"),
     // search: game.settings.get("swnr", "search"),
     languagePresetSelector: game.settings.get("swnr", "languagePresetSelector"),
     availableLanguages: game.settings.get("swnr", "availableLanguages"),
