@@ -349,6 +349,7 @@ export class SWNActorSheet extends SWNBaseSheet {
     const items = [];
     const features = [];
     const cyberware = [];
+    const injuries = [];
     const powersByType = {
       psychic: {},
       art: {},
@@ -376,19 +377,23 @@ export class SWNActorSheet extends SWNBaseSheet {
       else if (i.type === 'cyberware') {
         cyberware.push(i);
       }
+      // Collect injuries
+      else if (i.type === 'injury') {
+        injuries.push(i);
+      }
       // Append to powers by type and level.
       else if (i.type === 'power') {
         const powerType = i.system.subType || 'psychic';
         const powerLevel = i.system.level || 0;
-        
+
         // Add hasPrepCosts property to the power item
         i.hasPrepCosts = i.system.consumptions?.some(c => c.timing === "preparation") || false;
-        
+
         // Initialize type structure if needed
         if (!powersByType[powerType]) {
           powersByType[powerType] = {};
         }
-        
+
         // For arts and mutations, create a flat list (no level grouping)
         if (powerType === 'art' || powerType === 'mutation') {
           if (!powersByType[powerType]['flat']) {
@@ -429,10 +434,8 @@ export class SWNActorSheet extends SWNBaseSheet {
       return 0;
     });
 
-    // Filter injuries and sort by severity (highest first)
-    const injuries = this.actor.items.filter(i => i.type === "injury");
-    injuries.sort((a, b) => b.system.severity - a.system.severity);
-    context.injuries = injuries;
+    // Sort injuries by severity (highest first)
+    context.injuries = injuries.sort((a, b) => b.system.severity - a.system.severity);
     context.hasInjuries = injuries.length > 0;
 
     if (this.actor.type === "npc") {

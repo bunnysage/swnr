@@ -1,4 +1,5 @@
 import SWNItemBase from './base-item.mjs';
+import SWNShared from '../shared.mjs';
 
 export default class SWNInjury extends SWNItemBase {
   static LOCALIZATION_PREFIXES = [
@@ -10,27 +11,19 @@ export default class SWNInjury extends SWNItemBase {
     const fields = foundry.data.fields;
     const schema = super.defineSchema();
 
-    schema.location = new fields.StringField({
-      required: true,
-      initial: "torso",
-      choices: CONFIG.SWN.injuryLocations
-    });
+    schema.location = SWNShared.stringChoices("torso", CONFIG.SWN.injuryLocations);
 
+    // Side uses blank: true which isn't available in SWNShared helpers
     schema.side = new fields.StringField({
       required: false,
       blank: true,
       initial: "",
-      choices: { "": "", "left": "Left ", "right": "Right " }
+      choices: { "": "", "left": "Left", "right": "Right" }
     });
 
-    schema.severity = new fields.NumberField({
-      required: true,
-      nullable: false,
-      integer: true,
-      min: 0,
-      initial: 0
-    });
+    schema.severity = SWNShared.requiredNumber(0, 0);
 
+    // daysRemaining is nullable which isn't available in SWNShared helpers
     schema.daysRemaining = new fields.NumberField({
       required: false,
       nullable: true,
@@ -41,10 +34,10 @@ export default class SWNInjury extends SWNItemBase {
 
     schema.treated = new fields.BooleanField({ initial: false });
 
-    schema.injuryType = new fields.StringField({
-      required: true,
-      initial: "wound",
-      choices: { wound: "Wound" }
+    schema.injuryType = SWNShared.stringChoices("wound", {
+      wound: "Wound",
+      criticalMinor: "Critical (Minor)",
+      criticalModerate: "Critical (Moderate)"
     });
 
     return schema;
@@ -70,7 +63,7 @@ export default class SWNInjury extends SWNItemBase {
    */
   get mechanicalEffect() {
     const location = this.location;
-    const side = this.side ? `${this.side.charAt(0).toUpperCase()}${this.side.slice(1)}` : "";
+    const side = this.side ? SWNShared.capitalizeFirst(this.side) : "";
     const severity = this.severity;
 
     let effectDescription = "";
@@ -105,8 +98,8 @@ export default class SWNInjury extends SWNItemBase {
    * @returns {string} Formatted location name
    */
   get formattedLocation() {
-    const sideLabel = this.side ? `${this.side.charAt(0).toUpperCase()}${this.side.slice(1)} ` : "";
-    const locationLabel = this.location.charAt(0).toUpperCase() + this.location.slice(1);
+    const sideLabel = this.side ? `${SWNShared.capitalizeFirst(this.side)} ` : "";
+    const locationLabel = SWNShared.capitalizeFirst(this.location);
     return `${sideLabel}${locationLabel}`;
   }
 

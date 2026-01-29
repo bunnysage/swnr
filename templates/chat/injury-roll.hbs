@@ -6,8 +6,22 @@
 
   <div class="message-content">
     <div class="injury-type-indicator injury-type-{{injuryType}}">
-      <strong>{{localize 'swnr.injury.wound'}}</strong>
-      <span class="hp-percentage">(0 {{localize 'swnr.injury.hp'}})</span>
+      <strong>
+        {{#if (eq injuryType 'wound')}}
+          {{localize 'swnr.injury.wound'}}
+        {{else if (eq injuryType 'criticalMinor')}}
+          {{localize 'swnr.injury.minor'}}
+        {{else}}
+          {{localize 'swnr.injury.moderate'}}
+        {{/if}}
+      </strong>
+      <span class="hp-percentage">
+        {{#if (eq injuryType 'wound')}}
+          (0 {{localize 'swnr.injury.hp'}})
+        {{else}}
+          ({{currentHp}}/{{maxHp}} {{localize 'swnr.injury.hp'}} - {{hpPercentage}}%)
+        {{/if}}
+      </span>
     </div>
 
     <div class="injury-location">
@@ -26,7 +40,11 @@
         <summary>{{localize 'swnr.injury.modifiers'}}</summary>
         <div class="dice-calculation">
           <div class="dice-formula">
-            {{severityDie}}: [{{severityRoll}}] + {{injuryContribution}} ({{injuries}} {{localize 'swnr.injury.injuries'}} &times; 2) + {{excessDamage}} (excess damage) - {{critResistance}} (CR) = {{severity}}
+            {{#if (eq injuryType 'wound')}}
+              {{severityDie}}: [{{severityRoll}}] + {{injuryContribution}} ({{injuries}} {{localize 'swnr.injury.injuries'}} &times; 2) + {{excessDamage}} (excess damage) - {{critResistance}} (CR) = {{severity}}
+            {{else}}
+              {{severityDie}}: [{{severityRoll}}] + {{injuryContribution}} ({{injuries}} {{localize 'swnr.injury.injuries'}}) - {{critResistance}} (CR) = {{severity}}
+            {{/if}}
           </div>
         </div>
       </details>
@@ -46,7 +64,12 @@
     </div>
 
     <div class="actor-status">
-      <strong>{{actor.name}}</strong> {{localize 'swnr.injury.nowAt'}} 0 {{localize 'swnr.injury.hp'}}
+      <strong>{{actor.name}}</strong> {{localize 'swnr.injury.nowAt'}}
+      {{#if (eq injuryType 'wound')}}
+        0 {{localize 'swnr.injury.hp'}}
+      {{else}}
+        {{currentHp}}/{{maxHp}} {{localize 'swnr.injury.hp'}}
+      {{/if}}
     </div>
   </div>
 </div>
