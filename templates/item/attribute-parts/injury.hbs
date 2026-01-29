@@ -1,0 +1,31 @@
+<section class='tab attributes {{tab.cssClass}}' data-group='primary' data-tab='{{tab.id}}'>
+  <div class='sheet-body'>
+    <div class="injury-details">
+      <h3><i class="fas {{system.locationIcon}}"></i> {{localize 'SWN.Item.Injury.details'}}</h3>
+
+      <div class="injury-info">
+        <div class="flexrow">
+          <strong>{{localize 'SWN.Item.Injury.FIELDS.location.label'}}:</strong>
+          <span>{{system.formattedLocation}}</span>
+        </div>
+        <div class="flexrow">
+          <strong>{{localize 'SWN.Item.Injury.FIELDS.severity.label'}}:</strong>
+          <span>{{system.severity}}</span>
+        </div>
+        <div class="flexrow">
+          <strong>{{localize 'SWN.Item.Injury.duration'}}:</strong>
+          <span>{{system.durationDisplay}}</span>
+        </div>
+        <div class="flexrow">
+          <strong>{{localize 'SWN.Item.Injury.FIELDS.treated.label'}}:</strong>
+          <span>{{#if system.treated}}{{localize 'Yes'}}{{else}}{{localize 'No'}}{{/if}}</span>
+        </div>
+      </div>
+
+      <h3><i class="fas fa-exclamation-triangle"></i> {{localize 'SWN.Item.Injury.mechanicalEffect'}}</h3>
+      <div class="injury-effect">
+        {{system.mechanicalEffect}}
+      </div>
+    </div>
+  </div>
+</section>

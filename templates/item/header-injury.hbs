@@ -1,0 +1,44 @@
+<header class='sheet-header'>
+  <div class="flexrow">
+    <!-- Profile Image -->
+    <div class="item-img">
+      <img
+        class='item-img'
+        src='{{item.img}}'
+        data-edit='img'
+        data-action='onEditImage'
+        title='{{item.name}}'
+      />
+    </div>
+    <div class='header-fields'>
+      <div class='document-name'>
+        <input
+          name='name'
+          type='text'
+          value='{{item.name}}'
+          placeholder='Name'
+        />
+      </div>
+      <div class='grid grid-3col'>
+        <div class='resource'>
+          {{formGroup systemFields.location value=system.location localize=true}}
+        </div>
+        <div class='resource'>
+          {{formGroup systemFields.side value=system.side localize=true}}
+        </div>
+        <div class='resource'>
+          {{formGroup systemFields.severity value=system.severity localize=true}}
+        </div>
+      </div>
+      <div class='flexrow' style="gap: 16px; padding-top: 8px;">
+        <div class="resource">
+          {{formGroup systemFields.daysRemaining value=system.daysRemaining localize=true}}
+        </div>
+        <div class="resource" style="display: flex; align-items: center; gap: 8px;">
+          <label>{{localize 'SWN.Item.Injury.FIELDS.treated.label'}}</label>
+          <input type="checkbox" class="small-checkbox" name="system.treated" {{#if system.treated}}checked{{/if}} />
+        </div>
+      </div>
+    </div>
+  </div>
+</header>

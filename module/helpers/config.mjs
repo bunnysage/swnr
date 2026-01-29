@@ -370,6 +370,13 @@ SWN.featureTypes = {
   feature: 'swnr.featureTypes.feature'
 };
 
+SWN.injuryLocations = {
+  arm: 'swnr.injury.location.arm',
+  leg: 'swnr.injury.location.leg',
+  torso: 'swnr.injury.location.torso',
+  head: 'swnr.injury.location.head'
+};
+
 SWN.itemIconPath = "systems/swnr/assets/icons/game-icons.net/item-icons";
 SWN.actorIconPath = "systems/swnr/assets/icons";
 
@@ -393,6 +400,7 @@ SWN.defaultImg = {
   cyberdeck: "cyberdeck.png",
   faction: "faction.png",
   npc: "blankface.png",
+  injury: "techno-heart.svg",
 };
 
 SWN.shipActions = {

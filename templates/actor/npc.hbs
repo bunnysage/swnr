@@ -36,17 +36,9 @@
             {{formGroup systemFields.attacks.fields.shock.fields.ac value=system.attacks.shock.ac localize=true}}
           </div>
         </div>
+        {{!-- AB moved to header for consistency with character sheet --}}
         {{#if (eq gameSettings.useCWNArmor true)}}
-        <div class="flex flexrow gap-4">
-          <div class="flex flex-col">
-            {{formGroup systemFields.ab value=system.ab localize=true label='swnr.sheet.ranged-attack-bonus'}}
-          </div>
-          <div class="flex flex-col">
-            {{formGroup systemFields.meleeAb value=system.meleeAb localize=true}}
-          </div>
-        </div>
-        {{else}}
-        {{formGroup systemFields.ab value=system.ab localize=true}}
+        {{formGroup systemFields.meleeAb value=system.meleeAb localize=true}}
         {{/if}}
         {{#if (eq gameSettings.useCWNArmor true)}}
         {{formGroup systemFields.baseSoakTotal value=system.baseSoakTotal localize=true widget=groupWidget}}
@@ -115,6 +107,7 @@
       {{> "systems/swnr/templates/actor/fragments/compact-armor-list.hbs" itemList=actor.itemTypes.armor actorType=actor.type }}
       {{> "systems/swnr/templates/actor/fragments/compact-carried-list.hbs" itemList=actor.itemTypes.item actorType=actor.type }}
       {{> "systems/swnr/templates/actor/fragments/compact-abilities-list.hbs" itemList=abilities actorType=actor.type }}
+      {{> "systems/swnr/templates/actor/fragments/injuries-list.hbs" injuries=injuries }}
     </div> <!-- End 3rd Column -->
 
   </div>

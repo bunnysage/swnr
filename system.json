@@ -44,6 +44,9 @@
         }
     },
     "Item": {
+        "class": {
+            "htmlFields": ["description"]
+        },
         "feature": {
             "htmlFields": ["description"]
         },
@@ -78,6 +81,9 @@
             "htmlFields": ["description"]
         },
         "shipFitting": {
+            "htmlFields": ["description"]
+        },
+        "injury": {
             "htmlFields": ["description"]
         }
     }

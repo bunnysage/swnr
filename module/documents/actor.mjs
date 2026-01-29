@@ -202,6 +202,7 @@ export class SWNActor extends Actor {
     const critResistance = this.system.critResistance || 0;
     const severityRoll = new Roll("1d12");
     await severityRoll.roll();
+    const severityRollRendered = await severityRoll.render();
     // Fix 4: Ensure severity is never negative
     const severity = Math.max(0, severityRoll.total + (injuries * 2) + excessDamage - critResistance);
 
@@ -216,8 +217,23 @@ export class SWNActor extends Actor {
       "system.wounds": woundsBefore + woundIncrease
     });
 
-    // Generate effect description using helper
-    const effectDescription = this._getInjuryEffectDescription(location, side, severity);
+    // Create injury item
+    const sideLabelCapitalized = side ? `${side.charAt(0).toUpperCase()}${side.slice(1)} ` : "";
+    const locationCapitalized = location.charAt(0).toUpperCase() + location.slice(1);
+    const injuryData = {
+      name: `${sideLabelCapitalized}${locationCapitalized} Injury`,
+      type: "injury",
+      img: `${CONFIG.SWN.itemIconPath}/${CONFIG.SWN.defaultImg.injury}`,
+      system: {
+        location,
+        side: side.toLowerCase().trim(),
+        severity,
+        daysRemaining: severity >= 11 ? null : severity,
+        treated: false,
+        injuryType: "wound"
+      }
+    };
+    await this.createEmbeddedDocuments("Item", [injuryData]);
 
     // Create chat message
     const template = "systems/swnr/templates/chat/wound-roll.hbs";
@@ -227,6 +243,9 @@ export class SWNActor extends Actor {
       locationIcon: locationIcon,
       locationRoll: locationRollValue,
       severityRoll: severityRoll.total,
+      severityRollRendered: severityRollRendered,
+      severityDie: "1d12",
+      injuryType: "wound",
       injuries: injuries,
       injuryContribution: injuries * 2,
       excessDamage: excessDamage,
@@ -235,8 +254,7 @@ export class SWNActor extends Actor {
       injuryBefore: injuries,
       injuryAfter: injuries + injuryIncrease,
       woundBefore: woundsBefore,
-      woundAfter: woundsBefore + woundIncrease,
-      effectDescription: effectDescription
+      woundAfter: woundsBefore + woundIncrease
     };
     
     const chatContent = await renderTemplate(template, chatData);
@@ -275,6 +293,7 @@ export class SWNActor extends Actor {
     const critResistance = this.system.critResistance || 0;
     const severityRoll = new Roll(severityDie);
     await severityRoll.roll();
+    const severityRollRendered = await severityRoll.render();
     // Fix 4: Ensure severity is never negative
     const severity = Math.max(0, severityRoll.total + injuries - critResistance);
 
@@ -292,6 +311,24 @@ export class SWNActor extends Actor {
     // Generate effect description using helper
     const effectDescription = this._getInjuryEffectDescription(location, side, severity);
 
+    // Create injury item
+    const sideLabelCapitalized = side ? `${side.charAt(0).toUpperCase()}${side.slice(1)} ` : "";
+    const locationCapitalized = location.charAt(0).toUpperCase() + location.slice(1);
+    const injuryItemData = {
+      name: `${sideLabelCapitalized}${locationCapitalized} Injury`,
+      type: "injury",
+      img: `${CONFIG.SWN.itemIconPath}/${CONFIG.SWN.defaultImg.injury}`,
+      system: {
+        location,
+        side: side.toLowerCase().trim(),
+        severity,
+        daysRemaining: severity >= 11 ? null : severity,
+        treated: false,
+        injuryType: "wound"
+      }
+    };
+    await this.createEmbeddedDocuments("Item", [injuryItemData]);
+
     // Create chat message
     const template = "systems/swnr/templates/chat/critical-injury.hbs";
     const chatData = {
@@ -301,6 +338,7 @@ export class SWNActor extends Actor {
       locationRoll: locationRollValue,
       severityDie: severityDie,
       severityRoll: severityRoll.total,
+      severityRollRendered: severityRollRendered,
       injuries: injuries,
       injuryContribution: injuries,  // Critical injuries use injuries × 1
       critResistance: critResistance,

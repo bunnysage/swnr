@@ -214,7 +214,8 @@ export class SWNActorSheet extends SWNBaseSheet {
 
     // Ensure shared fragments are preloaded regardless of which parts render
     await loadTemplates([
-      'systems/swnr/templates/actor/fragments/pools-display.hbs'
+      'systems/swnr/templates/actor/fragments/pools-display.hbs',
+      'systems/swnr/templates/actor/fragments/injuries-list.hbs'
     ]);
 
     // Offloading context prep to a helper function
@@ -427,6 +428,12 @@ export class SWNActorSheet extends SWNBaseSheet {
       if ((a.system.type || 0) > (b.system.type || 0)) { return 1; }
       return 0;
     });
+
+    // Filter injuries and sort by severity (highest first)
+    const injuries = this.actor.items.filter(i => i.type === "injury");
+    injuries.sort((a, b) => b.system.severity - a.system.severity);
+    context.injuries = injuries;
+    context.hasInjuries = injuries.length > 0;
 
     if (this.actor.type === "npc") {
       const abilities = []

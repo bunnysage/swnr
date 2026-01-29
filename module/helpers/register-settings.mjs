@@ -130,6 +130,25 @@ export const registerSettings = function () {
     config: true,
     type: Boolean,
     default: false,
+    onChange: (value) => {
+      if (value && game.settings.get("swnr", "useCriticalHits")) {
+        ui.notifications.warn("Trauma and Critical Hits are both enabled. These systems are typically mutually exclusive.");
+      }
+    }
+  });
+
+  game.settings.register("swnr", "useCriticalHits", {
+    name: "swnr.settings.useCriticalHits",
+    hint: "swnr.settings.useCriticalHitsHint",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: false,
+    onChange: (value) => {
+      if (value && game.settings.get("swnr", "useTrauma")) {
+        ui.notifications.warn("Critical Hits and Trauma are both enabled. These systems are typically mutually exclusive.");
+      }
+    }
   });
 
   game.settings.register("swnr", "useDeathAndDismemberment", {
@@ -346,6 +365,7 @@ export const getGameSettings = function () {
     attackRoll: game.settings.get("swnr", "attackRoll"),
     damageRoll: game.settings.get("swnr", "damageRoll"),
     useTrauma: game.settings.get("swnr", "useTrauma"),
+    useCriticalHits: game.settings.get("swnr", "useCriticalHits"),
     useCWNArmor: game.settings.get("swnr", "useCWNArmor"),
     useCWNCyber: game.settings.get("swnr", "useCWNCyber"),
     useStress: game.settings.get("swnr", "useStress"),

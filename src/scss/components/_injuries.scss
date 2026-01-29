@@ -1,0 +1,80 @@
+// Injury item sheet styles
+.injury-details {
+  padding: 8px;
+
+  h3 {
+    margin-top: 16px;
+
+    &:first-child {
+      margin-top: 0;
+    }
+  }
+}
+
+.injury-info {
+  margin-top: 8px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+
+  .flexrow {
+    margin-bottom: 8px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    strong {
+      flex: 0 0 120px;
+    }
+  }
+}
+
+.injury-effect {
+  margin-top: 8px;
+  padding: 8px;
+  background: rgba(200, 100, 100, 0.1);
+  border-radius: 4px;
+  border-left: 3px solid #c44;
+}
+
+// Injuries list in actor sheets
+.injuries-list {
+  .injury-item {
+    .item-name {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .item-image {
+        i {
+          font-size: 20px;
+          width: 24px;
+          text-align: center;
+        }
+      }
+    }
+
+    .injury-info {
+      display: flex;
+      flex-direction: column;
+      margin-top: 0;
+      padding: 0;
+      background: none;
+    }
+
+    .injury-location {
+      font-size: 0.8em;
+      opacity: 0.7;
+
+      i {
+        color: green;
+      }
+    }
+  }
+
+  .no-injuries {
+    opacity: 0.6;
+    font-style: italic;
+  }
+}
