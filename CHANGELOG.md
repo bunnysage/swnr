@@ -1,9 +1,131 @@
 # CHANGELOG
 
-All notable changes to the Stars Without Number Redux (SWNR) system for Foundry VTT will be documented in this file.
+All notable changes to the Systems Without Number Redux (SWNR) system for Foundry VTT will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased] - Critical Hit System
+
+### Added
+
+#### Critical Hit Detection and Damage
+- Natural 20 detection on attack rolls triggers Critical Hit system
+- Critical hits display a red gradient banner with skull icon and "Critical Hit!" text
+- Doubled damage calculation and display for critical hits
+- Critical damage section shows base damage and doubled value
+- `data-critical="true"` attribute propagates critical context through damage buttons
+
+#### Critical Injury System (HP > 0)
+When a critical hit deals damage but the target remains above 0 HP, a tiered injury system applies:
+
+- **Minor Injury (HP ≥ 50%)**: Rolls `1d6 + (injuries × 1) - critResistance`
+- **Moderate Injury (HP < 50%)**: Rolls `1d8 + (injuries × 1) - critResistance`
+- New chat template displays injury type badge, HP percentage, location, severity breakdown
+- Same wound thresholds as existing death & dismemberment system (11+ unconscious, 16+ additional wounds)
+
+#### Actor Methods
+- `_rollInjuryLocation()` - Refactored helper for d12 location rolls (arm, leg, torso, head)
+- `_getInjuryEffectDescription()` - Refactored helper for generating effect text
+- `applyCriticalInjury(hpPercentage)` - New method for HP > 0 critical injuries
+
+#### Templates
+- `templates/chat/critical-injury.hbs` - New chat card for critical injuries when HP > 0
+
+#### Styling
+- `.critical-hit-banner` - Red gradient header with skull icon and pulse animation
+- `.roll-critical` - Red border styling for critical rolls
+- `.critical-damage-section` - Left border styling for critical damage display
+- `.injury-type-minor` / `.injury-type-moderate` - Colored badges for injury severity
+- Dark theme variants for all critical hit styling
+
+#### Localization
+- `swnr.chat.criticalHit` - "Critical Hit!"
+- `swnr.chat.criticalDamage` - "Critical Damage"
+- `swnr.chat.criticalInjury` - "Critical Injury!"
+- `swnr.injury.minor` - "Minor Injury"
+- `swnr.injury.moderate` - "Moderate Injury"
+
+### Changed
+
+#### Files Modified
+1. **module/data/items/item-weapon.mjs**
+   - Added natural 20 detection after hit roll
+   - Calculates doubled damage for critical hits
+   - Passes `isCriticalHit`, `criticalDamageTotal`, `criticalDamageRender` to template
+   - Stores `isCriticalHit` in chat flags for deferred damage rolls
+
+2. **templates/chat/attack-roll.hbs**
+   - Added critical hit banner when `isCriticalHit` is true
+   - Shows base damage plus critical damage (doubled) section
+   - Adds `data-critical="true"` attribute for button logic
+
+3. **templates/chat/damage-roll.hbs**
+   - Added critical hit banner for deferred damage rolls
+   - Shows critical damage section with doubled damage
+
+4. **module/helpers/chat.mjs**
+   - Updated `_addHealthButtons()` to detect critical context from `data-critical` attribute
+   - Modified all damage button handlers to pass `{ isCriticalHit }` options
+   - Updated `applyHealthDrop(total, options = {})` signature
+   - Added logic: if HP > 0 after critical hit, calls `actor.applyCriticalInjury(hpPercentage)`
+
+5. **module/documents/actor.mjs**
+   - Refactored `applyWounds()` to use new helper methods
+   - Added `applyCriticalInjury(hpPercentage)` method
+
+6. **src/scss/components/_chat.scss**
+   - Added critical hit banner, roll, damage, and injury type styling
+   - Added dark theme variants
+
+7. **lang/en.json**
+   - Added critical hit and injury localization strings
+
+### System Flow
+```
+Natural 20 Attack → Critical Hit banner + doubled damage in chat
+    ↓
+Apply critical damage to token:
+    ↓
+    ├── HP ≤ 0 → 1d12 + (injuries × 2) + excessDamage - CR (existing)
+    ├── HP > 0, HP < 50% → 1d8 + (injuries × 1) - CR
+    └── HP > 0, HP ≥ 50% → 1d6 + (injuries × 1) - CR
+```
+
+---
+
+## [2.3.0] 2025-11-04 More XWN support
+
+- Custom currency system configuration supported. Base currency and up to 5 custom currencies. Old debt, balance, and owed fields are deprecated and will be removed in a future version.  They should be migrated to the new system, but the old values are shown in the tweaks section as readonly.
+- Added readied and stowed modifiers to character sheet (under features/tweaks)
+- Fixed capt support department bug
+- Added stress button to character sheet to modify and roll stress, along with tracking breakdowns (page 57 of AWN).
+- Auto show power type on features tab when type is first added
+- Setting to not roll damage/trauma dice on attack roll automatically with button to roll
+- Added GM notes to item description (under description tab). GM notes are hidden by default and can be shown to players by checking the box.
+
+## [2.2.1] 2025-11-11 CWN Cyberware compendium
+
+- Re-added CWN Cyberware compendium
+
+## [2.2.0] 2025-11-03 More AWN support
+
+### Fixes:
+- Bulk add skills dialog now has a dropdown for skill lists
+- Moved movement attribute to Features tab
+- Changed header layout to be more compact
+- Added fuel to vehicle sheet (behind AWN setting)
+- Added run time to vehicle sheet (behind AWN setting)
+- Added cargo to vehicle sheet (tracks cargo and gear carried)
+- NPC reaction roll now uses a private roll and takes a modifier
+- Fixed issues for ship / mech attack
+- Removed roll formula from item description by default
+- Updated WWN / OSE compendium content
+- Updated NPC import from CSV for compendium import
+- Added condition to item description and chat messages. Not yet automated. Behind AWN setting.
+- Shock damage now uses dice string
+- Changed several fields to validate that they are valid dice strings (such as damage, trauma, etc)
+- Misc fixes and more AWN support
 
 ## [2.1.0] - 2025-09-30 Unified Power System and AWN 
 

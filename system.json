@@ -2,7 +2,7 @@
   "id": "swnr",
   "title": "Systems Without Number (Stars, Cities, Worlds, and Ashes)",
   "description": "The Stars, Cities, Worlds, and Ashes Without Number System for FoundryVTT!",
-  "version": "2.1.0",
+  "version": "2.3.0",
   "authors": [
     {
       "name": "wintersleepAI",
@@ -44,6 +44,9 @@
         }
     },
     "Item": {
+        "class": {
+            "htmlFields": ["description"]
+        },
         "feature": {
             "htmlFields": ["description"]
         },
@@ -78,6 +81,9 @@
             "htmlFields": ["description"]
         },
         "shipFitting": {
+            "htmlFields": ["description"]
+        },
+        "injury": {
             "htmlFields": ["description"]
         }
     }

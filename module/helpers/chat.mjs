@@ -1,13 +1,20 @@
 export function chatListeners(message, html) {
+//  html.on("click", "button.dmgroll", _onDmgRollClick.c(this));
+  html.on("click", "button.dmgroll", (event) => _onDmgRollClick.call(this, event, message));
+
   html.on("click", ".card-buttons button", _onChatCardAction.bind(this));
-  // Add reroll buttons to all dice rolls
-  html.find(".roll").each((_i, div) => {
-    _addRerollButton($(div));
+
+  // Get native element from jQuery wrapper
+  const nativeHtml = html[0] || html;
+
+  // Add reroll buttons to all dice rolls (native DOM)
+  nativeHtml.querySelectorAll(".roll").forEach((div) => {
+    _addRerollButton(div);
   });
-  
-  // Add health buttons to damage rolls
-  html.find(".roll-damage").each((_i, div) => {
-    _addHealthButtons($(div));
+
+  // Add health buttons to damage rolls (native DOM, pass message for context)
+  nativeHtml.querySelectorAll(".roll-damage").forEach((div) => {
+    _addHealthButtons(div, message);
   });
   //  html.on("click", ".item-name", _onChatCardToggleContent.bind(this));
   // Desc toggle
@@ -76,11 +83,14 @@ function getRerollButton(
   diceRoll,
   isAttack
 ) {
-  const rerollButton = $("<button>")
-    .addClass("dice-total-reroll-btn chat-button-small")
-    .attr("title", game.i18n.localize("swnr.chat.rerollButton"))
-    .append($("<i>").addClass("fas fa-redo"));
-  rerollButton.on("click", async (ev) => {
+  const rerollButton = document.createElement("button");
+  rerollButton.className = "dice-total-reroll-btn chat-button-small";
+  rerollButton.title = game.i18n.localize("swnr.chat.rerollButton");
+  const icon = document.createElement("i");
+  icon.className = "fas fa-redo";
+  rerollButton.appendChild(icon);
+
+  rerollButton.addEventListener("click", async (ev) => {
     const rollMode = game.settings.get("core", "rollMode");
     ev.stopPropagation();
     const roll = new Roll(diceRoll);
@@ -105,93 +115,127 @@ function getRerollButton(
 }
 
 export function _addRerollButton(html) {
-  const totalDiv = html.find(".dice-total");
-  if (totalDiv.parent().parent().parent().hasClass("re-roll")) {
-    // this is a re-roll do not add
+  const totalDiv = html.querySelector(".dice-total");
+  if (!totalDiv) {
+    return;
+  }
+  // Check if this is a re-roll (don't add reroll button to rerolls)
+  if (totalDiv.parentElement?.parentElement?.parentElement?.classList.contains("re-roll")) {
     return;
   }
 
   // Check if reroll button already exists to prevent duplicates
-  const existingContainer = totalDiv.parent().find(".dmgBtn-container");
-  if (existingContainer.length > 0 && existingContainer.find(".dice-total-reroll-btn").length > 0) {
+  const parentEl = totalDiv.parentElement;
+  let existingContainer = parentEl?.querySelector(".dmgBtn-container");
+  if (existingContainer?.querySelector(".dice-total-reroll-btn")) {
     return;
   }
 
-  const diceRoll = totalDiv.parent().find(".dice-formula").text();
-  const total = parseInt(totalDiv.text());
+  const formulaEl = parentEl?.querySelector(".dice-formula");
+  const diceRoll = formulaEl?.textContent || "";
+  const total = parseInt(totalDiv.textContent);
   if (isNaN(total)) {
-    console.log("Error in converting a string to a number " + totalDiv.text());
+    console.log("Error in converting a string to a number " + totalDiv.textContent);
     return;
   }
 
   // Use existing container or create new one
-  let btnContainer = existingContainer.length > 0 ? existingContainer : $('<div class="dmgBtn-container"></div>');
+  let btnContainer;
+  if (existingContainer) {
+    btnContainer = existingContainer;
+  } else {
+    btnContainer = document.createElement("div");
+    btnContainer.className = "dmgBtn-container";
+  }
   const rerollButton = getRerollButton(diceRoll, false);
-  btnContainer.append(rerollButton);
-  
+  btnContainer.appendChild(rerollButton);
+
   // Only append if we created a new container
-  if (existingContainer.length === 0) {
-    totalDiv.parent().append(btnContainer);
+  if (!existingContainer && parentEl) {
+    parentEl.appendChild(btnContainer);
   }
 }
 
-export function _addHealthButtons(html) {
-  const totalDiv = html.find(".dice-total");
-  
+export function _addHealthButtons(html, message) {
+  const totalDiv = html.querySelector(".dice-total");
+  if (!totalDiv) {
+    return;
+  }
+
   // Check if health buttons already exist to prevent duplicates
-  const existingContainer = totalDiv.parent().find(".dmgBtn-container");
-  if (existingContainer.length > 0 && existingContainer.find(".dice-total-fullDamage-btn").length > 0) {
+  const parentEl = totalDiv.parentElement;
+  let existingContainer = parentEl?.querySelector(".dmgBtn-container");
+  if (existingContainer?.querySelector(".dice-total-fullDamage-btn")) {
     return;
   }
-  
-  const total = parseInt(totalDiv.text());
+
+  const total = parseInt(totalDiv.textContent);
   if (isNaN(total)) {
-    console.log("Error in converting a string to a number " + totalDiv.text());
+    console.log("Error in converting a string to a number " + totalDiv.textContent);
     return;
   }
-  const diceRoll = totalDiv.parent().find(".dice-formula").text();
 
-  const fullDamageButton = $("<button>")
-    .addClass("dice-total-fullDamage-btn chat-button-small")
-    .attr("title", game.i18n.localize("swnr.chat.healthButtons.fullDamage"))
-    .append($("<i>").addClass("fas fa-user-minus"));
+  // Read critical hit context from message flags (Fix 2: reliable source)
+  const isCriticalHit = message?.getFlag("swnr", "isCriticalHit") ||
+                        message?.getFlag("swnr", "damageRoll")?.isCriticalHit ||
+                        html.closest("[data-critical='true']") !== null ||
+                        html.querySelector("[data-critical='true']") !== null;
 
-  const halfDamageButton = $("<button>")
-    .addClass("dice-total-halfDamage-btn chat-button-small")
-    .attr("title", game.i18n.localize("swnr.chat.healthButtons.halfDamage"))
-    .append($("<i>").addClass("fas fa-user-shield"));
+  // Create buttons using native DOM
+  const fullDamageButton = document.createElement("button");
+  fullDamageButton.className = "dice-total-fullDamage-btn chat-button-small";
+  fullDamageButton.title = game.i18n.localize("swnr.chat.healthButtons.fullDamage");
+  const fullDamageIcon = document.createElement("i");
+  fullDamageIcon.className = "fas fa-user-minus";
+  fullDamageButton.appendChild(fullDamageIcon);
 
-  const fullHealingButton = $("<button>")
-    .addClass("dice-total-fullHealing-btn chat-button-small")
-    .attr("title", game.i18n.localize("swnr.chat.healthButtons.fullHealing"))
-    .append($("<i>").addClass("fas fa-user-plus"));
+  const halfDamageButton = document.createElement("button");
+  halfDamageButton.className = "dice-total-halfDamage-btn chat-button-small";
+  halfDamageButton.title = game.i18n.localize("swnr.chat.healthButtons.halfDamage");
+  const halfDamageIcon = document.createElement("i");
+  halfDamageIcon.className = "fas fa-user-shield";
+  halfDamageButton.appendChild(halfDamageIcon);
 
-  const fullDamageModifiedButton = $("<button>")
-    .addClass("dice-total-fullDamageMod-btn chat-button-small")
-    .attr("title", game.i18n.localize("swnr.chat.healthButtons.fullDamageModified"))
-    .append($("<i>").addClass("fas fa-user-edit"));
+  const fullHealingButton = document.createElement("button");
+  fullHealingButton.className = "dice-total-fullHealing-btn chat-button-small";
+  fullHealingButton.title = game.i18n.localize("swnr.chat.healthButtons.fullHealing");
+  const fullHealingIcon = document.createElement("i");
+  fullHealingIcon.className = "fas fa-user-plus";
+  fullHealingButton.appendChild(fullHealingIcon);
+
+  const fullDamageModifiedButton = document.createElement("button");
+  fullDamageModifiedButton.className = "dice-total-fullDamageMod-btn chat-button-small";
+  fullDamageModifiedButton.title = game.i18n.localize("swnr.chat.healthButtons.fullDamageModified");
+  const modifiedIcon = document.createElement("i");
+  modifiedIcon.className = "fas fa-user-edit";
+  fullDamageModifiedButton.appendChild(modifiedIcon);
 
   // Use existing container or create new one
-  let btnContainer = existingContainer.length > 0 ? existingContainer : $('<div class="dmgBtn-container"></div>');
-
-  btnContainer.append(fullDamageButton);
-  btnContainer.append(fullDamageModifiedButton);
-  btnContainer.append(halfDamageButton);
-  // btnContainer.append(doubleDamageButton);
-  btnContainer.append(fullHealingButton);
-  
-  // Only append if we created a new container
-  if (existingContainer.length === 0) {
-    totalDiv.parent().append(btnContainer);
+  let btnContainer;
+  if (existingContainer) {
+    btnContainer = existingContainer;
+  } else {
+    btnContainer = document.createElement("div");
+    btnContainer.className = "dmgBtn-container";
   }
 
-  // Handle button clicks
-  fullDamageButton.on("click", (ev) => {
+  btnContainer.appendChild(fullDamageButton);
+  btnContainer.appendChild(fullDamageModifiedButton);
+  btnContainer.appendChild(halfDamageButton);
+  btnContainer.appendChild(fullHealingButton);
+
+  // Only append if we created a new container
+  if (!existingContainer && parentEl) {
+    parentEl.appendChild(btnContainer);
+  }
+
+  // Handle button clicks - pass critical hit context to damage application
+  fullDamageButton.addEventListener("click", (ev) => {
     ev.stopPropagation();
-    applyHealthDrop(total);
+    applyHealthDrop(total, { isCriticalHit });
   });
 
-  fullDamageModifiedButton.on("click", (ev) => {
+  fullDamageModifiedButton.addEventListener("click", (ev) => {
     ev.stopPropagation();
     new Dialog({
       title: "Apply Modifier to Damage",
@@ -209,15 +253,13 @@ export function _addHealthButtons(html) {
         },
       },
       default: "yes",
-      close: (html) => {
-        const form = html[0].querySelector("form");
-        const modifier = ((
-          form.querySelector('[name="inputField"]')
-        ))?.value;
+      close: (dialogHtml) => {
+        const form = dialogHtml[0].querySelector("form");
+        const modifier = form.querySelector('[name="inputField"]')?.value;
         if (modifier && modifier != "") {
           const nModifier = Number(modifier);
           if (nModifier) {
-            applyHealthDrop(total + nModifier);
+            applyHealthDrop(total + nModifier, { isCriticalHit });
           } else {
             ui.notifications?.error(modifier + " is not a number");
           }
@@ -226,19 +268,14 @@ export function _addHealthButtons(html) {
     }).render(true);
   });
 
-  halfDamageButton.on("click", (ev) => {
+  halfDamageButton.addEventListener("click", (ev) => {
     ev.stopPropagation();
-    applyHealthDrop(Math.floor(total * 0.5));
+    applyHealthDrop(Math.floor(total * 0.5), { isCriticalHit });
   });
 
-  // doubleDamageButton.click(ev => {
-  //     ev.stopPropagation();
-  // applyHealthDrop(total*2);
-  // });
-
-  fullHealingButton.on("click", (ev) => {
+  fullHealingButton.addEventListener("click", (ev) => {
     ev.stopPropagation();
-    applyHealthDrop(total * -1);
+    applyHealthDrop(total * -1);  // Healing doesn't trigger critical injuries
   });
 }
 
@@ -271,7 +308,8 @@ export async function showValueChange(
   else t.hud.createScrollingText(`${total * -1}`, floaterData); // v9
 }
 
-export async function applyHealthDrop(total) {
+export async function applyHealthDrop(total, options = {}) {
+  const { isCriticalHit = false } = options;
   if (total == 0) return; // Skip changes of 0
 
   const tokens = canvas?.tokens?.controlled;
@@ -366,11 +404,20 @@ export async function applyHealthDrop(total) {
         await actor.update({ "system.health.value": newHealth });
         
         // Check for death & dismemberment if enabled
-        if (game.settings.get("swnr", "useDeathAndDismemberment") && 
-            total > 0 && // Only on damage, not healing
-            newHealth <= 0) { // HP at 0 or below
-          const excessDamage = Math.max(0, total - oldHealth);
-          await actor.applyWounds(excessDamage);
+        if (game.settings.get("swnr", "useDeathAndDismemberment") &&
+            total > 0) { // Only on damage, not healing
+          if (newHealth <= 0) { // HP at 0 or below
+            const excessDamage = Math.max(0, total - oldHealth);
+            await actor.applyWounds(excessDamage);
+          } else if (isCriticalHit) { // HP > 0 but critical hit - apply critical injury
+            const maxHealth = actor.system.health.max;
+            if (maxHealth <= 0) {
+              console.warn(`SWNR | Cannot calculate critical injury for ${actor.name}: max HP is ${maxHealth}`);
+            } else {
+              const hpPercentage = newHealth / maxHealth;
+              await actor.applyCriticalInjury(hpPercentage);
+            }
+          }
         }
         
         // Taken from Mana
@@ -426,6 +473,78 @@ export function _findCharTargets() {
     chars.push(game.user.character);
   }
   return chars;
+}
+
+// Load a saved damage roll from the message flags
+export async function _onDmgRollClick(event, message) {
+  event.preventDefault();
+  const btn = event.currentTarget;
+  const ns  = btn.dataset.flagns;
+  const key = btn.dataset.flagkey;
+
+  const payload = message.getFlag(ns, key);
+  if (!payload?.formula) return;
+
+  const actor = payload.actorId ? game.actors.get(payload.actorId) : null;
+
+  const damageRoll = await (new Roll(payload.formula, payload.data)).evaluate({ async: true });
+
+  let traumaRollRender = null;
+  let traumaDamage = null;
+  if (payload.traumaFormula) {
+    const traumaRoll = new Roll(payload.traumaFormula);
+    await traumaRoll.roll();
+    traumaRollRender = await traumaRoll.render();
+    if (traumaRoll && traumaRoll.total && traumaRoll.total >= 6 && damageRoll?.total) {
+      traumaDamage = new Roll(`${payload.traumaRating} * ${damageRoll.total}`);
+      await traumaDamage.roll();
+      traumaDamage = await traumaDamage.render();
+    }
+  }
+  const rollMode = game.settings.get("core", "rollMode");
+
+  // Calculate critical damage if this was a critical hit
+  const isCriticalHit = payload.isCriticalHit || false;
+  let criticalDamageTotal = null;
+  let criticalDamageRender = null;
+  if (isCriticalHit && damageRoll?.total) {
+    criticalDamageTotal = damageRoll.total * 2;
+    criticalDamageRender = `<span class="critical-damage-value">${criticalDamageTotal}</span> (${damageRoll.total} × 2)`;
+  }
+
+  const damageRollTemplate = "systems/swnr/templates/chat/damage-roll.hbs";
+  const damageRollData = {
+    actor: actor,
+    weapon: payload.weaponId ? game.items.get(payload.weaponId) : null,
+    damageRoll: damageRoll,
+    damage: await damageRoll.render(),
+    damageExplain: payload.damageExplain,
+    traumaRollRender,
+    traumaDamage,
+    isCriticalHit,
+    criticalDamageTotal,
+    criticalDamageRender,
+  };
+  const damageRollContent = await renderTemplate(damageRollTemplate, damageRollData);
+  const chatData = {
+    speaker: ChatMessage.getSpeaker({ actor }),
+    content: damageRollContent,
+    roll: JSON.stringify(damageRoll),
+    rolls: [damageRoll],
+    flavor: payload.flavor,
+  };
+
+  // Set isCriticalHit flag on the message for reliable detection
+  if (isCriticalHit) {
+    chatData.flags = {
+      swnr: {
+        isCriticalHit: true
+      }
+    };
+  }
+
+  getDocumentClass("ChatMessage").applyRollMode(chatData, rollMode);
+  getDocumentClass("ChatMessage").create(chatData);
 }
 
 //Taken from WWN (which could have come from OSE)

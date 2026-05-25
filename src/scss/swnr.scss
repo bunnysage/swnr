@@ -20,6 +20,7 @@
   @include meta.load-css('components/effects');
   @include meta.load-css("components/buttons");
   @include meta.load-css('components/consumption');
+  @include meta.load-css('components/injuries');
 
   /* Container drag and drop styling */
   .drop-target {

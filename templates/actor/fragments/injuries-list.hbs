@@ -1,0 +1,64 @@
+<ol class='items-list injuries-list'>
+  <li class='flex flexrow items-header'>
+    <div class='item-name item-name-long'>{{ localize 'swnr.injury.title'}}</div>
+    <div class='item-controls-small'>
+      {{#if @root.editable}}
+        <a
+          class='item-control item-create'
+          title='{{localize "swnr.injury.add"}}'
+          data-action='createDoc'
+          data-document-class='Item'
+          data-type='injury'
+        >
+          <i class='fas fa-plus'></i>
+        </a>
+      {{/if}}
+    </div>
+  </li>
+  {{#each injuries as |item id|}}
+    <li
+      class='item flex flexrow injury-item'
+      data-item-id='{{item._id}}'
+      data-drag='true'
+      data-document-class='Item'
+    >
+      <div class='item-name'>
+        <div class='item-image'>
+          <a data-action='viewDoc'>
+            <i class="fas {{item.system.locationIcon}}"></i>
+          </a>
+        </div>
+        <div class="injury-info">
+          <span class="injury-name">{{item.name}}</span>
+          <span class="injury-location">
+            {{item.system.formattedLocation}} - Severity {{item.system.severity}}
+            {{#if item.system.treated}}<i class="fas fa-check-circle" title="Treated"></i>{{/if}}
+          </span>
+        </div>
+      </div>
+      <div class='item-controls-small'>
+        <a
+          class='item-control item-edit'
+          title='{{localize "DOCUMENT.Update" type="Item"}}'
+          data-action='viewDoc'
+        >
+          <i class='fas fa-edit'></i>
+        </a>
+        {{#if @root.editable}}
+          <a
+            class='item-control item-delete'
+            title='{{localize "DOCUMENT.Delete" type="Item"}}'
+            data-action='deleteDoc'
+          >
+            <i class='fas fa-trash'></i>
+          </a>
+        {{/if}}
+      </div>
+    </li>
+  {{/each}}
+  {{#unless injuries}}
+    <li class='item flex flexrow no-injuries'>
+      <div class='item-name'>{{localize 'swnr.injury.none'}}</div>
+    </li>
+  {{/unless}}
+</ol>

@@ -73,6 +73,9 @@ export class SWNItemSheet extends api.HandlebarsApplicationMixin(
     headerShip: {
       template: 'systems/swnr/templates/item/header-ship.hbs',
     },
+    headerInjury: {
+      template: 'systems/swnr/templates/item/header-injury.hbs',
+    },
     tabs: {
       // Foundry-provided generic template
       template: 'templates/generic/tab-navigation.hbs',
@@ -122,6 +125,9 @@ export class SWNItemSheet extends api.HandlebarsApplicationMixin(
     },
     attributesShipDefense: {
       template: 'systems/swnr/templates/item/attribute-parts/ship-defense.hbs'
+    },
+    attributesInjury: {
+      template: 'systems/swnr/templates/item/attribute-parts/injury.hbs'
     }
   };
 
@@ -153,8 +159,11 @@ export class SWNItemSheet extends api.HandlebarsApplicationMixin(
         break;
       case 'shipFitting':
       case 'shipDefense':
-      case 'shipWeapon':        
+      case 'shipWeapon':
         options.parts.push('headerShip');
+        break;
+      case 'injury':
+        options.parts.push('headerInjury');
         break;
       default:
         options.parts.push('header');
@@ -212,6 +221,10 @@ export class SWNItemSheet extends api.HandlebarsApplicationMixin(
         options.parts.push('attributesShipDefense');
         options.defaultTab = 'attributes';
         break;
+      case 'injury':
+        options.parts.push('attributesInjury');
+        options.defaultTab = 'attributes';
+        break;
       case 'skill':
         break;
     }
@@ -228,6 +241,7 @@ export class SWNItemSheet extends api.HandlebarsApplicationMixin(
       editable: this.isEditable,
       owner: this.document.isOwner,
       limited: this.document.limited,
+      isGM: game.user.isGM,
       // Add the item document.
       item: this.item,
       // Adding system and flags for easier access
@@ -273,6 +287,7 @@ export class SWNItemSheet extends api.HandlebarsApplicationMixin(
       case 'attributesShipDefense':
       case 'attributesShipFitting':
       case 'attributesShipWeapon':
+      case 'attributesInjury':
         // Necessary for preserving active tab on re-render
         context.tab = context.tabs[partId];
         break;
@@ -332,6 +347,7 @@ export class SWNItemSheet extends api.HandlebarsApplicationMixin(
         case 'headerFeature':
         case 'headerAsset':
         case 'headerShip':
+        case 'headerInjury':
         case 'tabs':
           return tabs;
         case 'description':
@@ -350,6 +366,7 @@ export class SWNItemSheet extends api.HandlebarsApplicationMixin(
         case 'attributesShipDefense':
         case 'attributesShipFitting':
         case 'attributesShipWeapon':
+        case 'attributesInjury':
           tab.id = 'attributes';
           tab.label += 'Attributes';
           break;

@@ -1,3 +1,5 @@
+import SWNShared from '../data/shared.mjs';
+
 /**
  * Extend the base Actor document by defining a custom roll data structure which is ideal for the Simple system.
  * @extends {Actor}
@@ -95,16 +97,116 @@ export class SWNActor extends Actor {
   }
 
   /**
-   * Apply wounds from death & dismemberment system
-   * @param {number} excessDamage - Damage that exceeded current HP
+   * Calculate wound and injury increases based on severity thresholds
+   * @param {number} severity - The calculated severity value
+   * @returns {{ injuryIncrease: number, woundIncrease: number }}
    */
-  async applyWounds(excessDamage) {
-    // Roll for location (1d12)
+  _calculateWoundThresholds(severity) {
+    let injuryIncrease = 1;
+    let woundIncrease = 0;
+
+    if (severity >= 11) {
+      woundIncrease = 1;
+    }
+    if (severity >= 16) {
+      woundIncrease += (severity - 15);
+    }
+
+    return { injuryIncrease, woundIncrease };
+  }
+
+  /**
+   * Create an injury item and chat message with the provided configuration
+   * @param {Object} config - Injury configuration
+   * @param {string} config.location - Body location (arm, leg, torso, head)
+   * @param {string} config.locationIcon - Font Awesome icon for location
+   * @param {string} config.side - Left/Right side (with trailing space) or empty
+   * @param {number} config.locationRollValue - The location roll result
+   * @param {number} config.severity - Calculated severity value
+   * @param {string} config.severityDie - Die formula used (1d12, 1d6, 1d8)
+   * @param {Object} config.severityRoll - The severity Roll object
+   * @param {string} config.severityRollRendered - Rendered HTML of the severity roll
+   * @param {string} config.injuryType - Type of injury (wound, criticalMinor, criticalModerate)
+   * @param {number} config.injuries - Current injury count before update
+   * @param {number} config.injuryIncrease - Number of injuries to add
+   * @param {number} config.woundsBefore - Current wound count before update
+   * @param {number} config.woundIncrease - Number of wounds to add
+   * @param {number} config.injuryContribution - Injury contribution to severity formula
+   * @param {number} config.critResistance - Critical resistance value
+   * @param {string} config.template - Path to the chat template
+   * @param {Object} [config.extraChatData] - Additional data for chat template
+   * @private
+   */
+  async _createInjury(config) {
+    const {
+      location, locationIcon, side, locationRollValue,
+      severity, severityDie, severityRoll, severityRollRendered,
+      injuryType, injuries, injuryIncrease, woundsBefore, woundIncrease,
+      injuryContribution, critResistance, template, extraChatData = {}
+    } = config;
+
+    // Create injury item data
+    const sideLabelCapitalized = side ? `${SWNShared.capitalizeFirst(side)} ` : "";
+    const locationCapitalized = SWNShared.capitalizeFirst(location);
+    const injuryData = {
+      name: `${sideLabelCapitalized}${locationCapitalized} Injury`,
+      type: "injury",
+      img: `${CONFIG.SWN.itemIconPath}/${CONFIG.SWN.defaultImg.injury}`,
+      system: {
+        location,
+        side: side.toLowerCase().trim(),
+        severity,
+        daysRemaining: severity >= 11 ? null : severity,
+        treated: false,
+        injuryType: injuryType
+      }
+    };
+
+    // Create chat message data
+    const chatData = {
+      actor: this,
+      location: side + SWNShared.capitalizeFirst(location),
+      locationIcon: locationIcon,
+      locationRoll: locationRollValue,
+      severityDie: severityDie,
+      severityRoll: severityRoll.total,
+      severityRollRendered: severityRollRendered,
+      injuryType: injuryType,
+      injuries: injuries,
+      injuryContribution: injuryContribution,
+      critResistance: critResistance,
+      severity: severity,
+      injuryBefore: injuries,
+      injuryAfter: injuries + injuryIncrease,
+      woundBefore: woundsBefore,
+      woundAfter: woundsBefore + woundIncrease,
+      ...extraChatData
+    };
+
+    const chatContent = await renderTemplate(template, chatData);
+    const rollMode = game.settings.get("core", "rollMode");
+    const messageData = {
+      speaker: ChatMessage.getSpeaker({ actor: this }),
+      content: chatContent
+    };
+    ChatMessage.implementation.applyRollMode(messageData, rollMode);
+
+    // Parallelize independent operations to reduce race condition window
+    await Promise.all([
+      this.createEmbeddedDocuments("Item", [injuryData]),
+      ChatMessage.create(messageData)
+    ]);
+  }
+
+  /**
+   * Roll for injury location (1d12)
+   * @returns {Promise<{location: string, locationIcon: string, side: string, locationRoll: number}>}
+   */
+  async _rollInjuryLocation() {
     const locationRoll = new Roll("1d12");
     await locationRoll.roll();
     const locationResult = locationRoll.total;
-    
-    // Determine location and icon
+
     let location = "";
     let locationIcon = "";
     let side = "";
@@ -120,93 +222,110 @@ export class SWNActor extends Actor {
       const sideRoll = new Roll("1d2");
       await sideRoll.roll();
       side = sideRoll.total === 1 ? "Left " : "Right ";
-    } else if (locationResult <= 8) {
+    } else if (locationResult <= 9) {
       location = "torso";
       locationIcon = "vest";
     } else {
       location = "head";
       locationIcon = "head-side";
     }
-    
-    // Calculate severity
+
+    return { location, locationIcon, side, locationRoll: locationResult };
+  }
+
+  /**
+   * Apply wounds from death & dismemberment system
+   * @param {number} excessDamage - Damage that exceeded current HP
+   */
+  async applyWounds(excessDamage) {
+    // Only characters and NPCs can receive injuries
+    if (this.type !== "character" && this.type !== "npc") {
+      console.log(`SWNR | Skipping wounds for non-character actor type: ${this.type}`);
+      return;
+    }
+
+    // Roll for location
+    const { location, locationIcon, side, locationRoll: locationRollValue } = await this._rollInjuryLocation();
+
+    // Calculate severity: 1d12 + (injuries × 2) + excessDamage - critResistance
     const injuries = this.system.injuries || 0;
     const critResistance = this.system.critResistance || 0;
     const severityRoll = new Roll("1d12");
     await severityRoll.roll();
-    const severity = severityRoll.total + (injuries * 2) + excessDamage - critResistance;
-    
-    // Store current values before updating
+    const severityRollRendered = await severityRoll.render();
+    const severity = Math.max(0, severityRoll.total + (injuries * 2) + excessDamage - critResistance);
+
+    // Store current values and calculate thresholds
     const woundsBefore = this.system.wounds || 0;
-    
-    // Update injuries and wounds
-    let injuryIncrease = 1;
-    let woundIncrease = 0;
-    
-    if (severity >= 11) {
-      woundIncrease = 1;
-    }
-    if (severity >= 16) {
-      woundIncrease += (severity - 15);
-    }
-    
+    const { injuryIncrease, woundIncrease } = this._calculateWoundThresholds(severity);
+
+    // Update actor counters
     await this.update({
       "system.injuries": injuries + injuryIncrease,
       "system.wounds": woundsBefore + woundIncrease
     });
-    
-    // Generate effect description
-    let effectDescription = "";
-    let duration = severity < 11 ? severity : "Until healed";
-    
-    if (location === "arm") {
-      effectDescription = `${side}arm disabled for ${duration} days. Cannot hold items, drops anything held.`;
-    } else if (location === "leg") {
-      effectDescription = `${side}leg disabled for ${duration} days. Falls prone, movement halved.`;
-    } else if (location === "torso") {
-      effectDescription = `Blood Loss for ${duration} days. Max HP reduced by 1 per HD.`;
-    } else if (location === "head") {
-      effectDescription = `Concussed for ${duration} days. Acts last in initiative, INT check DC 12 to cast spells.`;
+
+    // Create injury and chat message via shared helper
+    await this._createInjury({
+      location, locationIcon, side, locationRollValue,
+      severity, severityDie: "1d12", severityRoll, severityRollRendered,
+      injuryType: "wound", injuries, injuryIncrease, woundsBefore, woundIncrease,
+      injuryContribution: injuries * 2, critResistance,
+      template: "systems/swnr/templates/chat/injury-roll.hbs",
+      extraChatData: { excessDamage }
+    });
+  }
+
+  /**
+   * Apply critical injury from critical hit when HP > 0
+   * @param {number} hpPercentage - Current HP as a fraction of max HP (0-1)
+   */
+  async applyCriticalInjury(hpPercentage) {
+    // Only characters and NPCs can receive injuries
+    if (this.type !== "character" && this.type !== "npc") {
+      console.log(`SWNR | Skipping critical injury for non-character actor type: ${this.type}`);
+      return;
     }
-    
-    if (severity >= 11) {
-      effectDescription += " Character falls unconscious.";
-      if (severity < 16) {
-        effectDescription += " Physical save to avoid permanent injury.";
+
+    // Roll for location
+    const { location, locationIcon, side, locationRoll: locationRollValue } = await this._rollInjuryLocation();
+
+    // Determine severity die based on HP percentage
+    // HP >= 50% = 1d6 (minor), HP < 50% = 1d8 (moderate)
+    const isMinor = hpPercentage >= 0.5;
+    const severityDie = isMinor ? "1d6" : "1d8";
+    const injuryType = isMinor ? "criticalMinor" : "criticalModerate";
+
+    // Calculate severity: severityDie + injuries - critResistance
+    const injuries = this.system.injuries || 0;
+    const critResistance = this.system.critResistance || 0;
+    const severityRoll = new Roll(severityDie);
+    await severityRoll.roll();
+    const severityRollRendered = await severityRoll.render();
+    const severity = Math.max(0, severityRoll.total + injuries - critResistance);
+
+    // Store current values and calculate thresholds
+    const woundsBefore = this.system.wounds || 0;
+    const { injuryIncrease, woundIncrease } = this._calculateWoundThresholds(severity);
+
+    // Update actor counters
+    await this.update({
+      "system.injuries": injuries + injuryIncrease,
+      "system.wounds": woundsBefore + woundIncrease
+    });
+
+    // Create injury and chat message via shared helper
+    await this._createInjury({
+      location, locationIcon, side, locationRollValue,
+      severity, severityDie, severityRoll, severityRollRendered,
+      injuryType, injuries, injuryIncrease, woundsBefore, woundIncrease,
+      injuryContribution: injuries, critResistance,
+      template: "systems/swnr/templates/chat/injury-roll.hbs",
+      extraChatData: {
+        hpPercentage: Math.round(hpPercentage * 100),
+        currentHp: this.system.health.value,
+        maxHp: this.system.health.max
       }
-    }
-    
-    if (severity >= 16) {
-      effectDescription += ` Takes ${severity - 15} additional wounds.`;
-    }
-    
-    // Create chat message
-    const template = "systems/swnr/templates/chat/wound-roll.hbs";
-    const chatData = {
-      actor: this,
-      location: side + location.charAt(0).toUpperCase() + location.slice(1),
-      locationIcon: locationIcon,
-      locationRoll: locationRoll.total,
-      severityRoll: severityRoll.total,
-      injuries: injuries,
-      injuryContribution: injuries * 2,
-      excessDamage: excessDamage,
-      critResistance: critResistance,
-      severity: severity,
-      injuryBefore: injuries,
-      injuryAfter: injuries + injuryIncrease,
-      woundBefore: woundsBefore,
-      woundAfter: woundsBefore + woundIncrease,
-      effectDescription: effectDescription
-    };
-    
-    const chatContent = await renderTemplate(template, chatData);
-    const rollMode = game.settings.get("core", "rollMode");
-    const messageData = {
-      speaker: ChatMessage.getSpeaker({ actor: this }),
-      content: chatContent
-    };
-    
-    ChatMessage.implementation.applyRollMode(messageData, rollMode);
-    await ChatMessage.create(messageData);
+    });
   }
 }
