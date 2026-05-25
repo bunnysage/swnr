@@ -142,6 +142,11 @@ export default class SWNWeapon extends SWNBaseGearItem {
     const hitRoll = new Roll(dieString, rollData);
     await hitRoll.roll();
     rollData.hitRoll = +(hitRoll.dice[0].total?.toString() ?? 0);
+    const baseDie = hitRoll.dice?.[0];
+    const baseDieResult = baseDie?.results?.[0]?.result ?? null;
+    const baseIsD20 = baseDie?.faces === 20;
+    const isNat20 = baseIsD20 && baseDieResult === 20;
+    const isNat1 = baseIsD20 && baseDieResult === 1;
     const damageRoll = new Roll(
       this.damage + " + @burstFire + @stat + @damageBonus",
       rollData
@@ -220,6 +225,9 @@ export default class SWNWeapon extends SWNBaseGearItem {
       shock_content,
       traumaDamage,
       traumaRollRender,
+      natRollValue: baseDieResult,
+      isNat20,
+      isNat1,
     };
     const rollMode = game.settings.get("core", "rollMode");
     const diceData = Roll.fromTerms([foundry.dice.terms.PoolTerm.fromRolls(rollArray)]);

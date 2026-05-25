@@ -2,6 +2,16 @@
   <h3 title="{{ weapon.system.description }}">{{ weapon.name }}</h3>
 
   <span title="{{ diceTooltip.hitExplain }}" class="roll roll-hit">{{{ diceTooltip.hit }}}</span>
+  {{#if isNat20}}
+    <span class="nat-badge nat-crit" data-tooltip="{{localize 'swnr.chat.natural.critTooltip'}}">
+      <i class="fas fa-star"></i> {{localize 'swnr.chat.natural.crit'}}
+    </span>
+  {{/if}}
+  {{#if isNat1}}
+    <span class="nat-badge nat-fumble" data-tooltip="{{localize 'swnr.chat.natural.fumbleTooltip'}}">
+      <i class="fas fa-exclamation-triangle"></i> {{localize 'swnr.chat.natural.fumble'}}
+    </span>
+  {{/if}}
   <span>{{localize 'swnr.weapon.damage'}}:</span>
   <span title="{{ diceTooltip.damageExplain }}" class="roll roll-damage">{{{ diceTooltip.damage }}}</span>
   {{#if (ne shock_content null)}}

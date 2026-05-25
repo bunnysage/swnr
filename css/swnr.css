@@ -196,6 +196,36 @@
   --input-focus-color: rgb(5, 99, 150);
 }
 
+.chat-message .chat-card .nat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.chat-message .chat-card .nat-badge i {
+  font-size: 0.65rem;
+}
+
+.chat-message .chat-card .nat-crit {
+  background: rgba(39, 174, 96, 0.15);
+  border-color: rgba(39, 174, 96, 0.45);
+  color: #1f8c5a;
+}
+
+.chat-message .chat-card .nat-fumble {
+  background: rgba(231, 76, 60, 0.15);
+  border-color: rgba(231, 76, 60, 0.45);
+  color: #a12a2a;
+}
+
 .chat-message .card-buttons {
   display: flex;
   flex-wrap: wrap;
@@ -332,6 +362,18 @@
 
 .chat-message .test-summary ul li {
   margin-bottom: 0.25rem;
+}
+
+.theme-dark .chat-message .chat-card .nat-crit {
+  background: rgba(39, 174, 96, 0.2);
+  border-color: rgba(39, 174, 96, 0.55);
+  color: #7ff0b6;
+}
+
+.theme-dark .chat-message .chat-card .nat-fumble {
+  background: rgba(231, 76, 60, 0.2);
+  border-color: rgba(231, 76, 60, 0.6);
+  color: #ff9d8f;
 }
 
 .swnr .consume-select-container .consume-select-header {
