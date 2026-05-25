@@ -1,0 +1,34 @@
+{{#if injuryItems.length}}
+<ol class="items-list injury-list">
+  <li class="flex flexrow items-header">
+    <div class="item-name-long">{{localize 'swnr.injury.records'}}</div>
+    <div class="item-formula item-prop">{{localize 'swnr.injury.severity'}}</div>
+    <div class="item-controls item-prop"></div>
+  </li>
+  {{#each injuryItems as |item|}}
+    <li class="item flex flexrow" data-item-id="{{item.id}}" data-drag="true" data-document-class="Item">
+      <div class="item-name-long">
+        <span data-action="toggleItemDescription" data-item-id="{{item.id}}">
+          {{item.name}}
+        </span>
+      </div>
+      <div class="item-formula item-prop">{{localize (lookup @root.config.injurySeverityTypes item.system.severity)}}</div>
+      <div class="item-controls item-prop">
+        <a class="item-control item-edit" title="{{localize "DOCUMENT.Update" type='Item'}}" data-action="viewDoc">
+          <i class="fas fa-edit"></i>
+        </a>
+        {{#if @root.editable}}
+          <a class="item-control item-delete" title="{{localize "DOCUMENT.Delete" type='Item'}}" data-action="deleteDoc">
+            <i class="fas fa-trash"></i>
+          </a>
+        {{/if}}
+      </div>
+    </li>
+    <li class="item-description" style="display: {{#if (lookup @root.expandedDescriptions item.id)}}block{{else}}none{{/if}}; background-color: var(--color-bg-option); border-left: 3px solid var(--accent-color); margin-left: 1em; padding: 0.5em;">
+      <div class="item-description-content">
+        <strong>{{item.system.location}}</strong>: {{item.system.mechanicalEffect}}
+      </div>
+    </li>
+  {{/each}}
+</ol>
+{{/if}}

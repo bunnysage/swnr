@@ -28,6 +28,20 @@ See the [SWNR game wiki for instructions](https://github.com/wintersleepAI/swnr/
 - **Automated Calculations** - AC, saves, skill checks, and combat rolls
 - **Compendium Content** - Extensive pre-loaded equipment, powers, and creatures
 
+## Optional Threshold Injuries
+
+GMs can enable **Use Threshold Injuries** in system settings. When enabled, eligible normal personal weapon damage rolls one injury die per selected character or NPC target at damage-application time:
+
+```text
+1d10 >= 8 + injuryResistance - edge
+```
+
+`injuryResistance` is a manual GM-edited actor field. A default of `0` means intentionally unprotected for playtesting, not automatically configured. Edge comes from the stored attack total against the target's current defense: Edge 0 for a hit by 0-4, Edge 1 for 5-9, Edge 2 for 10+, and Edge 3 on a natural 20. Natural 20s still roll the injury die and are not automatic threshold injuries.
+
+Only normal, half, and modified normal weapon damage with trusted system chat context can trigger threshold checks. Critical damage, shock, trauma, healing, power damage, program damage, rerolls, manual health changes, and vehicle or ship damage remain HP-only for this rule. Weapon damage profile affects severity after a threshold injury triggers; it does not make larger weapons more likely to trigger.
+
+Threshold injuries are separate from Death & Dismemberment and CWN trauma. Below-zero Death & Dismemberment wounds take precedence, and threshold injuries suppress the current above-zero critical injury path for threshold-eligible normal attack damage while the threshold setting is enabled. Duplicate threshold attempts from the same source message/action family/target are best-effort blocked with actor flags; simultaneous multi-user races are a known v1 residual risk.
+
 ## Installation
 
 1. In Foundry VTT, go to the **Game Systems** tab

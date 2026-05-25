@@ -8,11 +8,11 @@
   {{/if}}
 
   <span>{{localize 'swnr.weapon.damage'}}:</span>
-  <span title="{{ damageExplain }}" class="roll roll-damage">{{{ damage }}}</span>
+  <span title="{{ damageExplain }}" class="roll roll-damage" data-damage-role="{{damageRoles.NORMAL}}">{{{ damage }}}</span>
   {{#if isCriticalHit}}
   <div class="critical-damage-section" data-critical="true">
     <span>{{localize 'swnr.chat.criticalDamage'}}:</span>
-    <span class="roll roll-damage roll-critical">{{{criticalDamageRender}}}</span>
+    <span class="roll roll-damage roll-critical" data-damage-role="{{damageRoles.CRITICAL}}">{{{criticalDamageRender}}}</span>
   </div>
   {{/if}}
 
@@ -30,7 +30,7 @@
 
     {{#if traumaDamage}}
       <span>{{localize 'swnr.weapon.trauma.damage'}}:</span>
-      <span class="roll roll-damage">
+      <span class="roll roll-damage" data-damage-role="{{damageRoles.TRAUMA}}">
         {{{traumaDamage}}}
       </span>
     {{/if}}

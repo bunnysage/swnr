@@ -138,6 +138,9 @@ export class SWNActorSheet extends SWNBaseSheet {
     },
     compactCarriedList: {
       template: 'systems/swnr/templates/actor/fragments/compact-carried-list.hbs',
+    },
+    injuryList: {
+      template: 'systems/swnr/templates/actor/fragments/injury-list.hbs',
     }
   };
 
@@ -190,6 +193,8 @@ export class SWNActorSheet extends SWNBaseSheet {
       // Validates both permissions and compendium status
       editable: this.isEditable,
       owner: this.document.isOwner,
+      isGM: game.user.isGM,
+      canEditInjuryResistance: game.user.isGM && this.isEditable,
       limited: this.document.limited,
       // Add the actor document.
       actor: this.actor,
@@ -346,6 +351,7 @@ export class SWNActorSheet extends SWNBaseSheet {
     // if you don't need to subdivide a given type like
     // this sheet does with powers
     const items = [];
+    const injuries = [];
     const features = [];
     const cyberware = [];
     const powersByType = {
@@ -367,6 +373,9 @@ export class SWNActorSheet extends SWNBaseSheet {
       }
       else if (i.type === 'weapon') {
         items.push(i);
+      }
+      else if (i.type === 'injury') {
+        injuries.push(i);
       }
       // Append to features.
       else if (i.type === 'feature') {
@@ -416,6 +425,7 @@ export class SWNActorSheet extends SWNBaseSheet {
 
     // Sort then assign
     context.items = items.sort((a, b) => (a.sort || 0) - (b.sort || 0));
+    context.injuryItems = injuries.sort((a, b) => (a.sort || 0) - (b.sort || 0));
     context.features = features.sort((a, b) => (a.sort || 0) - (b.sort || 0));
     context.powers = powers;
     // Sort cyberware by type, with none first

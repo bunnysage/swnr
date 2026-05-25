@@ -1,8 +1,46 @@
+import {
+  calculateThresholdEdge,
+  createThresholdMarker,
+  getInjuryResistance,
+  getThresholdDefense,
+  getThresholdSeverityBand,
+  getThresholdTargetNumber,
+  getTotalSeverityPressure,
+  isThresholdTriggered,
+  normalizeNonNegativeInteger,
+} from "../helpers/injury-thresholds.mjs";
+
 /**
  * Extend the base Actor document by defining a custom roll data structure which is ideal for the Simple system.
  * @extends {Actor}
  */
 export class SWNActor extends Actor {
+  /** @override */
+  async _preUpdate(changed, options, user) {
+    await super._preUpdate(changed, options, user);
+
+    const changedSystem = changed.system ?? {};
+    const hasNestedChange = Object.hasOwn(changedSystem, "injuryResistance");
+    const flatKey = "system.injuryResistance";
+    const hasFlatChange = Object.hasOwn(changed, flatKey);
+
+    if (!hasNestedChange && !hasFlatChange) return;
+
+    const actingUser = typeof user === "string" ? game.users?.get(user) : user;
+    const isGM = Boolean(actingUser?.isGM ?? game.user?.isGM);
+
+    if (!isGM) {
+      if (hasNestedChange) delete changedSystem.injuryResistance;
+      if (hasFlatChange) delete changed[flatKey];
+      if (changed.system && Object.keys(changed.system).length === 0) delete changed.system;
+      ui.notifications?.warn(game.i18n.localize("swnr.notifications.injuryResistanceGMOnly"));
+      return;
+    }
+
+    if (hasNestedChange) changedSystem.injuryResistance = normalizeNonNegativeInteger(changedSystem.injuryResistance);
+    if (hasFlatChange) changed[flatKey] = normalizeNonNegativeInteger(changed[flatKey]);
+  }
+
   /** @override */
   prepareData() {
     // Prepare data for the actor. Calling the super version of this executes
@@ -325,5 +363,170 @@ export class SWNActor extends Actor {
 
     ChatMessage.implementation.applyRollMode(messageData, rollMode);
     await ChatMessage.create(messageData);
+  }
+
+  getThresholdAttemptMarker(key) {
+    return this.getFlag("swnr", "thresholdInjuryAttempts")?.[key] ?? null;
+  }
+
+  async claimThresholdAttempt(key) {
+    const markers = foundry.utils.deepClone(this.getFlag("swnr", "thresholdInjuryAttempts") ?? {});
+    if (markers[key]) return false;
+    markers[key] = createThresholdMarker();
+    await this.setFlag("swnr", "thresholdInjuryAttempts", markers);
+    return true;
+  }
+
+  _getThresholdInjuryEffectDescription(location, side, bandLabel) {
+    const locationName = `${side}${location}`;
+    const band = bandLabel.charAt(0).toUpperCase() + bandLabel.slice(1);
+    return `${band} threshold injury affecting the ${locationName}. Apply table effects or GM adjudication appropriate to the wound.`;
+  }
+
+  _escapeHtml(value) {
+    if (foundry.utils?.escapeHTML) return foundry.utils.escapeHTML(String(value ?? ""));
+    const element = document.createElement("div");
+    element.textContent = String(value ?? "");
+    return element.innerHTML;
+  }
+
+  async applyThresholdInjury({
+    thresholdContext,
+    damageRole,
+    targetToken,
+    preDamageHp,
+    maxHp,
+    sourceMessageId,
+    sourceMessageUuid,
+  } = {}) {
+    if (this.type !== "character" && this.type !== "npc") {
+      return { thresholdEligible: false, thresholdAttempted: false, thresholdSkippedReason: "actor-type" };
+    }
+
+    const attack = thresholdContext?.attack;
+    const defense = getThresholdDefense(this, {
+      useCWNArmor: game.settings.get("swnr", "useCWNArmor"),
+      isMelee: Boolean(attack?.isMelee ?? attack?.sourceItemSnapshot?.isMelee),
+    });
+    const edgeResult = calculateThresholdEdge({
+      attackTotal: attack?.attackTotal,
+      defense,
+      naturalDie: attack?.naturalDie,
+    });
+    if (!edgeResult.eligible) {
+      return {
+        thresholdEligible: false,
+        thresholdAttempted: false,
+        thresholdSkippedReason: edgeResult.reason,
+      };
+    }
+
+    const injuryResistance = getInjuryResistance(this);
+    const targetNumber = getThresholdTargetNumber({ injuryResistance, edge: edgeResult.edge });
+    const thresholdRoll = new Roll("1d10");
+    await thresholdRoll.roll();
+    const thresholdTriggered = isThresholdTriggered({
+      dieTotal: thresholdRoll.total,
+      targetNumber,
+    });
+
+    const baseOutcome = {
+      thresholdEligible: true,
+      thresholdAttempted: true,
+      thresholdTriggered,
+      thresholdRoll: thresholdRoll.total,
+      targetNumber,
+      edge: edgeResult.edge,
+      injuryResistance,
+      defense,
+      damageRole,
+    };
+
+    if (!thresholdTriggered) return baseOutcome;
+
+    const severityPressure = getTotalSeverityPressure({
+      weaponFormula: attack?.baseDamageFormula ?? attack?.sourceItemSnapshot?.baseDamageFormula,
+      preDamageHp,
+      maxHp,
+      existingInjuries: this.system.injuries,
+    });
+    const severityRoll = new Roll("1d6");
+    await severityRoll.roll();
+    const severityScore = severityRoll.total + severityPressure;
+    const severityBand = getThresholdSeverityBand(severityScore);
+    const { location, locationIcon, side, locationRoll: locationRollValue } = await this._rollInjuryLocation();
+    const displayLocation = side + location.charAt(0).toUpperCase() + location.slice(1);
+    const effectDescription = this._getThresholdInjuryEffectDescription(location, side, severityBand.label);
+    const injuriesBefore = this.system.injuries || 0;
+    const injuriesAfter = injuriesBefore + (severityBand.persistent ? 1 : 0);
+
+    const updates = {};
+    if (severityBand.persistent) updates["system.injuries"] = injuriesAfter;
+    if (Object.keys(updates).length) await this.update(updates);
+
+    const itemName = `${severityBand.label.charAt(0).toUpperCase() + severityBand.label.slice(1)} Injury: ${displayLocation}`;
+    await this.createEmbeddedDocuments("Item", [{
+      name: itemName,
+      type: "injury",
+      system: {
+        severity: severityBand.key,
+        location: displayLocation,
+        source: attack?.sourceItemSnapshot?.name || "Attack",
+        mechanicalEffect: effectDescription,
+        persistent: severityBand.persistent,
+        severityScore,
+        locationRoll: locationRollValue,
+        description: effectDescription,
+      },
+    }]);
+
+    const sourceMessage = sourceMessageUuid ? await fromUuid(sourceMessageUuid) : game.messages?.get(sourceMessageId);
+    const hiddenTarget = Boolean(targetToken?.document?.hidden);
+    const template = "systems/swnr/templates/chat/threshold-injury-roll.hbs";
+    const chatData = {
+      actor: this,
+      targetLabel: hiddenTarget ? game.i18n.localize("swnr.injury.hiddenTarget") : (targetToken?.name || this.name),
+      weaponName: attack?.sourceItemSnapshot?.name || game.i18n.localize("swnr.injury.unknownSource"),
+      location: displayLocation,
+      locationIcon,
+      severityBand,
+      severityScore,
+      thresholdRoll: thresholdRoll.total,
+      targetNumber,
+      edge: edgeResult.edge,
+      injuryResistance,
+      defense,
+      severityRoll: severityRoll.total,
+      severityPressure,
+      injuriesBefore,
+      injuriesAfter,
+      effectDescription,
+      config: CONFIG.SWN,
+      user: game.user,
+    };
+    const chatContent = await renderTemplate(template, chatData);
+    const messageData = {
+      speaker: hiddenTarget ? { alias: game.i18n.localize("swnr.injury.hiddenTarget") } : ChatMessage.getSpeaker({ actor: this }),
+      content: chatContent,
+      whisper: sourceMessage?.whisper,
+      blind: sourceMessage?.blind,
+    };
+
+    await ChatMessage.create(messageData);
+    const gmUsers = game.users?.filter((user) => user.isGM).map((user) => user.id) ?? [];
+    if (gmUsers.length) {
+      await ChatMessage.create({
+        speaker: ChatMessage.getSpeaker({ actor: this }),
+        whisper: gmUsers,
+        content: `<p class="swnr threshold-gm-summary"><strong>${this._escapeHtml(chatData.targetLabel)}</strong>: threshold ${thresholdRoll.total} vs ${targetNumber}; Edge ${edgeResult.edge}, resistance ${injuryResistance}, defense ${defense}; severity ${severityRoll.total} + ${severityPressure} = ${severityScore}.</p>`,
+      });
+    }
+    return {
+      ...baseOutcome,
+      severityBand,
+      severityScore,
+      injuryItemCreated: true,
+      injuryPersistent: severityBand.persistent,
+    };
   }
 }

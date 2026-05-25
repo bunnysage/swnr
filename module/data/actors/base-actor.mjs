@@ -52,6 +52,7 @@ export default class SWNActorBase extends foundry.abstract
     
     // Death & Dismemberment fields
     schema.critResistance = SWNShared.requiredNumber(0);
+    schema.injuryResistance = SWNShared.requiredNumber(0);
     schema.injuries = SWNShared.requiredNumber(0);
     schema.wounds = SWNShared.requiredNumber(0);
     

@@ -1,0 +1,19 @@
+<section class='tab {{tab.cssClass}} sheet-body' data-group='primary' data-tab='injury'>
+  <div class='grid grid-2col'>
+    <div class="resource">
+      {{formGroup systemFields.severity value=system.severity localize=true}}
+    </div>
+    <div class="resource">
+      {{formGroup systemFields.location value=system.location localize=true}}
+    </div>
+    <div class="resource">
+      {{formGroup systemFields.source value=system.source localize=true}}
+    </div>
+    <div class="resource">
+      {{formGroup systemFields.persistent value=system.persistent localize=true widget=checkWidget}}
+    </div>
+    <div class="grid-span-2">
+      {{formGroup systemFields.mechanicalEffect value=system.mechanicalEffect localize=true}}
+    </div>
+  </div>
+</section>

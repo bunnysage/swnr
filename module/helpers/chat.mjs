@@ -1,3 +1,10 @@
+import {
+  buildThresholdAttemptKey,
+  DAMAGE_ROLES,
+  isThresholdDamageRole,
+  validateThresholdAttackContext,
+} from "./injury-thresholds.mjs";
+
 export function chatListeners(message, html) {
 //  html.on("click", "button.dmgroll", _onDmgRollClick.c(this));
   html.on("click", "button.dmgroll", (event) => _onDmgRollClick.call(this, event, message));
@@ -175,37 +182,58 @@ export function _addHealthButtons(html, message) {
     return;
   }
 
-  // Read critical hit context from message flags (Fix 2: reliable source)
-  const isCriticalHit = message?.getFlag("swnr", "isCriticalHit") ||
-                        message?.getFlag("swnr", "damageRoll")?.isCriticalHit ||
-                        html.closest("[data-critical='true']") !== null ||
-                        html.querySelector("[data-critical='true']") !== null;
+  const damageRole = html.dataset.damageRole || DAMAGE_ROLES.MANUAL;
+  const thresholdAttack = message?.getFlag("swnr", "thresholdAttack") ||
+    message?.getFlag("swnr", "damageRoll")?.thresholdAttack ||
+    null;
+  const thresholdValidation = validateThresholdAttackContext(thresholdAttack ?? {});
+  const hasTrustedNormalDamageRole = damageRole === DAMAGE_ROLES.NORMAL &&
+    Number(thresholdAttack?.normalDamageTotal) === Number(total);
+  const thresholdContext = thresholdValidation.valid && hasTrustedNormalDamageRole ? {
+    sourceMessageId: thresholdAttack.sourceAttackMessageId || message?.id,
+    sourceMessageUuid: thresholdAttack.sourceAttackMessageUuid || message?.uuid,
+    message,
+    attack: thresholdAttack,
+    damageRole,
+  } : null;
+
+  // Read critical hit context from message flags for existing critical injury behavior.
+  const isCriticalHit = damageRole === DAMAGE_ROLES.CRITICAL ||
+    Boolean(message?.getFlag("swnr", "isCriticalHit") || message?.getFlag("swnr", "damageRoll")?.isCriticalHit);
 
   // Create buttons using native DOM
   const fullDamageButton = document.createElement("button");
+  fullDamageButton.type = "button";
   fullDamageButton.className = "dice-total-fullDamage-btn chat-button-small";
   fullDamageButton.title = game.i18n.localize("swnr.chat.healthButtons.fullDamage");
+  fullDamageButton.setAttribute("aria-label", fullDamageButton.title);
   const fullDamageIcon = document.createElement("i");
   fullDamageIcon.className = "fas fa-user-minus";
   fullDamageButton.appendChild(fullDamageIcon);
 
   const halfDamageButton = document.createElement("button");
+  halfDamageButton.type = "button";
   halfDamageButton.className = "dice-total-halfDamage-btn chat-button-small";
   halfDamageButton.title = game.i18n.localize("swnr.chat.healthButtons.halfDamage");
+  halfDamageButton.setAttribute("aria-label", halfDamageButton.title);
   const halfDamageIcon = document.createElement("i");
   halfDamageIcon.className = "fas fa-user-shield";
   halfDamageButton.appendChild(halfDamageIcon);
 
   const fullHealingButton = document.createElement("button");
+  fullHealingButton.type = "button";
   fullHealingButton.className = "dice-total-fullHealing-btn chat-button-small";
   fullHealingButton.title = game.i18n.localize("swnr.chat.healthButtons.fullHealing");
+  fullHealingButton.setAttribute("aria-label", fullHealingButton.title);
   const fullHealingIcon = document.createElement("i");
   fullHealingIcon.className = "fas fa-user-plus";
   fullHealingButton.appendChild(fullHealingIcon);
 
   const fullDamageModifiedButton = document.createElement("button");
+  fullDamageModifiedButton.type = "button";
   fullDamageModifiedButton.className = "dice-total-fullDamageMod-btn chat-button-small";
   fullDamageModifiedButton.title = game.i18n.localize("swnr.chat.healthButtons.fullDamageModified");
+  fullDamageModifiedButton.setAttribute("aria-label", fullDamageModifiedButton.title);
   const modifiedIcon = document.createElement("i");
   modifiedIcon.className = "fas fa-user-edit";
   fullDamageModifiedButton.appendChild(modifiedIcon);
@@ -232,11 +260,12 @@ export function _addHealthButtons(html, message) {
   // Handle button clicks - pass critical hit context to damage application
   fullDamageButton.addEventListener("click", (ev) => {
     ev.stopPropagation();
-    applyHealthDrop(total, { isCriticalHit });
+    withHealthButtonsDisabled(btnContainer, () => applyHealthDrop(total, { isCriticalHit, damageRole, thresholdContext }));
   });
 
   fullDamageModifiedButton.addEventListener("click", (ev) => {
     ev.stopPropagation();
+    const enableButtons = disableHealthButtons(btnContainer);
     new Dialog({
       title: "Apply Modifier to Damage",
       content: `
@@ -253,16 +282,24 @@ export function _addHealthButtons(html, message) {
         },
       },
       default: "yes",
-      close: (dialogHtml) => {
+      close: async (dialogHtml) => {
         const form = dialogHtml[0].querySelector("form");
         const modifier = form.querySelector('[name="inputField"]')?.value;
-        if (modifier && modifier != "") {
-          const nModifier = Number(modifier);
-          if (nModifier) {
-            applyHealthDrop(total + nModifier, { isCriticalHit });
-          } else {
-            ui.notifications?.error(modifier + " is not a number");
+        try {
+          if (modifier && modifier != "") {
+            const nModifier = Number(modifier);
+            if (nModifier) {
+              await applyHealthDrop(total + nModifier, {
+                isCriticalHit,
+                damageRole: damageRole === DAMAGE_ROLES.NORMAL ? DAMAGE_ROLES.NORMAL_MODIFIED : damageRole,
+                thresholdContext,
+              });
+            } else {
+              ui.notifications?.error(modifier + " is not a number");
+            }
           }
+        } finally {
+          enableButtons();
         }
       },
     }).render(true);
@@ -270,13 +307,32 @@ export function _addHealthButtons(html, message) {
 
   halfDamageButton.addEventListener("click", (ev) => {
     ev.stopPropagation();
-    applyHealthDrop(Math.floor(total * 0.5), { isCriticalHit });
+    withHealthButtonsDisabled(btnContainer, () => applyHealthDrop(Math.floor(total * 0.5), {
+      isCriticalHit,
+      damageRole: damageRole === DAMAGE_ROLES.NORMAL ? DAMAGE_ROLES.NORMAL_HALF : damageRole,
+      thresholdContext,
+    }));
   });
 
   fullHealingButton.addEventListener("click", (ev) => {
     ev.stopPropagation();
-    applyHealthDrop(total * -1);  // Healing doesn't trigger critical injuries
+    withHealthButtonsDisabled(btnContainer, () => applyHealthDrop(total * -1, { damageRole: DAMAGE_ROLES.HEALING }));
   });
+}
+
+function disableHealthButtons(container) {
+  const buttons = Array.from(container.querySelectorAll("button"));
+  buttons.forEach((button) => { button.disabled = true; });
+  return () => buttons.forEach((button) => { button.disabled = false; });
+}
+
+async function withHealthButtonsDisabled(container, callback) {
+  const enableButtons = disableHealthButtons(container);
+  try {
+    await callback();
+  } finally {
+    enableButtons();
+  }
 }
 
 export async function showValueChange(
@@ -308,9 +364,36 @@ export async function showValueChange(
   else t.hud.createScrollingText(`${total * -1}`, floaterData); // v9
 }
 
+function canMutateActor(actor) {
+  if (game.user?.isGM) return true;
+  if (typeof actor?.canUserModify === "function") return actor.canUserModify(game.user, "update");
+  return Boolean(actor?.isOwner);
+}
+
+function escapeHtml(value) {
+  if (foundry.utils?.escapeHTML) return foundry.utils.escapeHTML(String(value ?? ""));
+  const element = document.createElement("div");
+  element.textContent = String(value ?? "");
+  return element.innerHTML;
+}
+
+async function sendThresholdGmNote(message) {
+  const gmUsers = game.users?.filter((user) => user.isGM).map((user) => user.id) ?? [];
+  if (!gmUsers.length) return;
+  await ChatMessage.create({
+    content: `<p class="swnr threshold-skip-note">${escapeHtml(message)}</p>`,
+    whisper: gmUsers,
+  });
+}
+
 export async function applyHealthDrop(total, options = {}) {
-  const { isCriticalHit = false } = options;
-  if (total == 0) return; // Skip changes of 0
+  const {
+    isCriticalHit = false,
+    damageRole = DAMAGE_ROLES.MANUAL,
+    thresholdContext = null,
+  } = options;
+  const originalTotal = Number(total);
+  if (originalTotal == 0) return; // Skip changes of 0
 
   const tokens = canvas?.tokens?.controlled;
   if (!tokens || tokens.length == 0) {
@@ -323,30 +406,35 @@ export async function applyHealthDrop(total, options = {}) {
 
   for (const t of tokens) {
     const actor = t.actor;
+    let targetTotal = originalTotal;
     let isDefeated = false;
 
     if (!actor) {
       ui.notifications?.error("Error getting actor for token " + t.name);
       continue;
     }
+    if (!canMutateActor(actor)) {
+      ui.notifications?.warn(`Cannot update ${actor.name}.`);
+      continue;
+    }
     if (actor.type == "cyberdeck") {
       const shielding = actor.system.health.value;
-      if (total > 0) {
+      if (targetTotal > 0) {
         // take from shielding first
-        const newShielding = Math.max(shielding - total, 0);
-        total -= shielding - newShielding;
+        const newShielding = Math.max(shielding - targetTotal, 0);
+        targetTotal -= shielding - newShielding;
         await actor.update({ "system.health.value": newShielding });
         await showValueChange(t, "0xFFA500", shielding - newShielding);
-        if (total > 0) {
+        if (targetTotal > 0) {
           isDefeated = true;
           const hacker = actor.getHacker();
           // damage still to player
           if (hacker) {
             const oldHealth = hacker.system.health.value;
-            const newHealth = Math.max(oldHealth - total, 0);
+            const newHealth = Math.max(oldHealth - targetTotal, 0);
             const damage = oldHealth - newHealth;
             await hacker.update({ "system.health.value": newHealth });
-            total = 0; // prevent later damage
+            targetTotal = 0; // prevent later damage
             ui.notifications?.info(
               `${hacker.name} takes ${damage} damage, now at ${newHealth} health`
             );
@@ -363,8 +451,8 @@ export async function applyHealthDrop(total, options = {}) {
       );
       const armorDRSum = armorWithDR.reduce((acc, i) => acc + i.system.dr, 0);
       if (armorDRSum > 0) {
-        total -= armorDRSum;
-        total = Math.max(total, 0);
+        targetTotal -= armorDRSum;
+        targetTotal = Math.max(targetTotal, 0);
       }
       if (game.settings.get("swnr", "useCWNArmor")) {
         const armorWithSoak = 
@@ -376,50 +464,64 @@ export async function applyHealthDrop(total, options = {}) {
               i.system.soak.value > 0
           );
         for (const armor of armorWithSoak) {
-          if (total > 0) {
+          if (targetTotal > 0) {
             const soakValue = armor.system.soak.value;
-            const newSoak = Math.max(soakValue - total, 0);
-            total -= soakValue - newSoak;
+            const newSoak = Math.max(soakValue - targetTotal, 0);
+            targetTotal -= soakValue - newSoak;
             await armor.update({ "system.soak.value": newSoak });
             await showValueChange(t, "0xFFA500", soakValue - newSoak);
           }
         }
-        if (total > 0 && actor.type == "npc") {
+        if (targetTotal > 0 && actor.type == "npc") {
           const soakValue = actor.system.baseSoakTotal.value;
-          const newSoak = Math.max(soakValue - total, 0);
-          total -= soakValue - newSoak;
+          const newSoak = Math.max(soakValue - targetTotal, 0);
+          targetTotal -= soakValue - newSoak;
           await actor.update({ "system.baseSoakTotal.value": newSoak });
           await showValueChange(t, "0xFFA500", soakValue - newSoak);
         }
       }
       const oldHealth = actor.system.health.value;
-      if (total != 0) {
-        let newHealth = oldHealth - total;
+      const maxHealth = actor.system.health.max;
+      let woundApplied = false;
+      if (targetTotal != 0) {
+        let newHealth = oldHealth - targetTotal;
         if (newHealth < 0) {
           newHealth = 0;
-        } else if (newHealth > actor.system.health.max) {
-          newHealth = actor.system.health.max;
+        } else if (newHealth > maxHealth) {
+          newHealth = maxHealth;
         }
         //console.log(`Updating ${actor.name} health to ${newHealth}`);
         await actor.update({ "system.health.value": newHealth });
         
         // Check for death & dismemberment if enabled
         if (game.settings.get("swnr", "useDeathAndDismemberment") &&
-            total > 0) { // Only on damage, not healing
+            targetTotal > 0) { // Only on damage, not healing
           if (newHealth <= 0) { // HP at 0 or below
-            const excessDamage = Math.max(0, total - oldHealth);
+            const excessDamage = Math.max(0, targetTotal - oldHealth);
+            woundApplied = true;
             await actor.applyWounds(excessDamage);
-          } else if (isCriticalHit) { // HP > 0 but critical hit - apply critical injury
-            const maxHealth = actor.system.health.max;
+          } else if (shouldApplyAboveZeroCriticalInjury({ isCriticalHit, damageRole, thresholdContext })) {
             const hpPercentage = newHealth / maxHealth;
             await actor.applyCriticalInjury(hpPercentage);
           }
         }
+
+        if (targetTotal > 0) {
+          await maybeApplyThresholdInjury({
+            actor,
+            token: t,
+            damageRole,
+            thresholdContext,
+            preDamageHp: oldHealth,
+            maxHp: maxHealth,
+            woundApplied,
+          });
+        }
         
         // Taken from Mana
         //https://gitlab.com/mkahvi/fvtt-micro-modules/-/blob/master/pf1-floating-health/floating-health.mjs#L182-194
-        const fillColor = total < 0 ? "0x00FF00" : "0xFF0000";
-        showValueChange(t, fillColor, total);
+        const fillColor = targetTotal < 0 ? "0x00FF00" : "0xFF0000";
+        showValueChange(t, fillColor, targetTotal);
 
         // Only apply defeated status if death & dismemberment is disabled
         if (!game.settings.get("swnr", "useDeathAndDismemberment")) {
@@ -429,14 +531,14 @@ export async function applyHealthDrop(total, options = {}) {
             // token was at <=0 and now is not
             isDefeated = false;
           } else {
-            // we can return no status to update
-            return;
+            // No defeated-state update needed for this token.
+            continue;
           }
           await t.combatant?.update({ defeated: isDefeated });
           const status = CONFIG.statusEffects.find(
             (e) => e.id === CONFIG.specialStatusEffects.DEFEATED
           );
-          if (!status) return;
+          if (!status) continue;
           const effect = actor && status ? status : CONFIG.controlIcons.defeated;
           if (t.object) {
             await t.object.toggleEffect(effect, {
@@ -453,6 +555,131 @@ export async function applyHealthDrop(total, options = {}) {
       }
     }
   }
+}
+
+function shouldUseThresholdRouting(damageRole, thresholdContext) {
+  return Boolean(
+    game.settings.get("swnr", "useThresholdInjuries") &&
+    thresholdContext?.attack &&
+    isThresholdDamageRole(damageRole)
+  );
+}
+
+export function shouldApplyAboveZeroCriticalInjury({ isCriticalHit, damageRole, thresholdContext } = {}) {
+  return Boolean(
+    isCriticalHit &&
+    isThresholdDamageRole(damageRole) &&
+    !shouldUseThresholdRouting(damageRole, thresholdContext)
+  );
+}
+
+async function maybeApplyThresholdInjury({
+  actor,
+  token,
+  damageRole,
+  thresholdContext,
+  preDamageHp,
+  maxHp,
+  woundApplied,
+}) {
+  if (!shouldUseThresholdRouting(damageRole, thresholdContext)) return null;
+  if (actor.type !== "character" && actor.type !== "npc") return null;
+
+  const validation = await validateThresholdProvenance(thresholdContext);
+  if (!validation.valid) {
+    await sendThresholdGmNote(`${actor.name}: threshold injury skipped because attack context failed validation (${validation.reason}).`);
+    return { thresholdSkippedReason: validation.reason };
+  }
+
+  if (woundApplied) {
+    await sendThresholdGmNote(`${actor.name}: threshold injury skipped because death-and-dismemberment wounds took precedence.`);
+    return { thresholdSkippedReason: "below-zero-preemption" };
+  }
+
+  if (!canMutateActor(actor)) {
+    await sendThresholdGmNote(`${actor.name}: threshold injury skipped because ${game.user?.name ?? "the user"} cannot update the target actor.`);
+    return { thresholdSkippedReason: "permission" };
+  }
+
+  const markerKey = buildThresholdAttemptKey({
+    sourceMessageId: thresholdContext.sourceMessageId,
+    sourceMessageUuid: thresholdContext.sourceMessageUuid,
+    targetActorId: actor.id,
+    targetActorUuid: actor.uuid,
+    targetTokenId: token.id,
+    targetTokenUuid: token.document?.uuid,
+    damageRole,
+  });
+
+  if (actor.getThresholdAttemptMarker(markerKey)) {
+    await sendThresholdGmNote(`${actor.name}: duplicate threshold injury attempt skipped.`);
+    return { duplicate: true };
+  }
+
+  const claimed = await actor.claimThresholdAttempt(markerKey);
+  if (!claimed) {
+    await sendThresholdGmNote(`${actor.name}: duplicate threshold injury attempt skipped.`);
+    return { duplicate: true };
+  }
+
+  if (actor.getThresholdAttemptMarker(markerKey)?.attempted !== true) {
+    await sendThresholdGmNote(`${actor.name}: threshold injury marker could not be confirmed.`);
+    return { thresholdSkippedReason: "marker" };
+  }
+
+  return actor.applyThresholdInjury({
+    thresholdContext,
+    damageRole,
+    targetToken: token,
+    preDamageHp,
+    maxHp,
+    sourceMessageId: thresholdContext.sourceMessageId,
+    sourceMessageUuid: thresholdContext.sourceMessageUuid,
+  });
+}
+
+export async function validateThresholdProvenance(thresholdContext) {
+  const attack = thresholdContext?.attack;
+  const shape = validateThresholdAttackContext(attack ?? {});
+  if (!shape.valid) return shape;
+  if (thresholdContext.damageRole !== DAMAGE_ROLES.NORMAL) return { valid: false, reason: "damage-role" };
+
+  const message = thresholdContext.message;
+  const sourceActor = attack.sourceActorUuid ? await fromUuid(attack.sourceActorUuid) : game.actors?.get(attack.sourceActorId);
+  if (!sourceActor) return { valid: false, reason: "source-actor-missing" };
+  if (sourceActor.type !== "character" && sourceActor.type !== "npc") return { valid: false, reason: "source-actor-type" };
+  if (attack.isPersonalScaleWeapon !== true) return { valid: false, reason: "source-scale" };
+  if (attack.sourceActorId && sourceActor.id !== attack.sourceActorId) return { valid: false, reason: "source-actor-mismatch" };
+  if (message?.speaker?.actor && message.speaker.actor !== sourceActor.id) return { valid: false, reason: "speaker-mismatch" };
+
+  const sourceItem = attack.sourceItemUuid ? await fromUuid(attack.sourceItemUuid) : sourceActor.getEmbeddedDocument?.("Item", attack.sourceItemId);
+  if (sourceItem) {
+    const parentUuid = sourceItem.parent?.uuid ?? sourceItem.actor?.uuid;
+    if (parentUuid !== sourceActor.uuid) return { valid: false, reason: "source-item-owner" };
+  } else if (!attack.sourceItemSnapshot) {
+    return { valid: false, reason: "source-item-missing" };
+  }
+
+  const authorId = attack.authorUserId ?? message?.user?.id ?? message?.user;
+  const author = authorId ? game.users?.get(authorId) : null;
+  if (!author && !game.user?.isGM) return { valid: false, reason: "author-missing" };
+  if (author && !author.isGM && typeof sourceActor.testUserPermission === "function" &&
+      !sourceActor.testUserPermission(author, "OWNER")) {
+    return { valid: false, reason: "author-permission" };
+  }
+
+  const sourceMessage = attack.sourceAttackMessageUuid ? await fromUuid(attack.sourceAttackMessageUuid) : message;
+  const hitRoll = sourceMessage?.rolls?.[0];
+  if (!hitRoll && !game.user?.isGM) return { valid: false, reason: "source-roll-missing" };
+  if (hitRoll) {
+    if (Number(hitRoll.total) !== Number(attack.attackTotal)) return { valid: false, reason: "attack-total-mismatch" };
+    const naturalDie = hitRoll.dice?.[0]?.total;
+    if (naturalDie !== undefined && Number(naturalDie) !== Number(attack.naturalDie)) {
+      return { valid: false, reason: "natural-die-mismatch" };
+    }
+  }
+
+  return { valid: true, reason: null };
 }
 
 export function _findCharTargets() {
@@ -511,7 +738,7 @@ export async function _onDmgRollClick(event, message) {
   const damageRollTemplate = "systems/swnr/templates/chat/damage-roll.hbs";
   const damageRollData = {
     actor: actor,
-    weapon: payload.weaponId ? game.items.get(payload.weaponId) : null,
+    weapon: payload.weaponUuid ? await fromUuid(payload.weaponUuid) : (payload.weaponId ? game.items.get(payload.weaponId) : null),
     damageRoll: damageRoll,
     damage: await damageRoll.render(),
     damageExplain: payload.damageExplain,
@@ -520,6 +747,7 @@ export async function _onDmgRollClick(event, message) {
     isCriticalHit,
     criticalDamageTotal,
     criticalDamageRender,
+    damageRoles: DAMAGE_ROLES,
   };
   const damageRollContent = await renderTemplate(damageRollTemplate, damageRollData);
   const chatData = {
@@ -530,14 +758,19 @@ export async function _onDmgRollClick(event, message) {
     flavor: payload.flavor,
   };
 
-  // Set isCriticalHit flag on the message for reliable detection
-  if (isCriticalHit) {
-    chatData.flags = {
-      swnr: {
-        isCriticalHit: true
-      }
-    };
-  }
+  const thresholdAttack = payload.thresholdAttack ? {
+    ...payload.thresholdAttack,
+    normalDamageTotal: damageRoll.total,
+    sourceAttackMessageId: payload.thresholdAttack.sourceAttackMessageId || message.id,
+    sourceAttackMessageUuid: payload.thresholdAttack.sourceAttackMessageUuid || message.uuid,
+  } : null;
+
+  chatData.flags = {
+    swnr: {
+      isCriticalHit,
+    }
+  };
+  if (thresholdAttack) chatData.flags.swnr.thresholdAttack = thresholdAttack;
 
   getDocumentClass("ChatMessage").applyRollMode(chatData, rollMode);
   getDocumentClass("ChatMessage").create(chatData);

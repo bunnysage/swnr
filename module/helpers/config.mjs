@@ -370,6 +370,13 @@ SWN.featureTypes = {
   feature: 'swnr.featureTypes.feature'
 };
 
+SWN.injurySeverityTypes = {
+  thresholdMinor: "swnr.injury.thresholdMinor",
+  thresholdModerate: "swnr.injury.thresholdModerate",
+  thresholdSerious: "swnr.injury.thresholdSerious",
+  thresholdSevere: "swnr.injury.thresholdSevere"
+};
+
 SWN.itemIconPath = "systems/swnr/assets/icons/game-icons.net/item-icons";
 SWN.actorIconPath = "systems/swnr/assets/icons";
 
@@ -386,6 +393,7 @@ SWN.defaultImg = {
   skill: "book-white.svg",
   edge: "edge.svg",
   program: "program.svg",
+  injury: "health-capsule.svg",
   drone: "drone.png",
   vehicle: "vehicle.png",
   ship: "spaceship.png",

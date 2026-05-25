@@ -13,11 +13,11 @@
 
   {{# if diceTooltip.damage}}
   <span>{{localize 'swnr.weapon.damage'}}:</span>
-  <span title="{{ diceTooltip.damageExplain }}" class="roll roll-damage">{{{ diceTooltip.damage }}}</span>
+  <span title="{{ diceTooltip.damageExplain }}" class="roll roll-damage" data-damage-role="{{damageRoles.NORMAL}}">{{{ diceTooltip.damage }}}</span>
   {{#if isCriticalHit}}
   <div class="critical-damage-section" data-critical="true">
     <span>{{localize 'swnr.chat.criticalDamage'}}:</span>
-    <span class="roll roll-damage roll-critical">{{{criticalDamageRender}}}</span>
+    <span class="roll roll-damage roll-critical" data-damage-role="{{damageRoles.CRITICAL}}">{{{criticalDamageRender}}}</span>
   </div>
   {{/if}}
   {{else}}
@@ -28,7 +28,7 @@
   
   {{#if (ne shock_content null)}}
    {{ shock_content }}
-   <span class="roll roll-shock roll-damage">{{{ shock_roll }}}</span>
+   <span class="roll roll-shock roll-damage" data-damage-role="{{damageRoles.SHOCK}}">{{{ shock_roll }}}</span>
   {{/if}}
   {{#if (ne weapon.system.ammo.type 'none')}}
     {{#if (ne weapon.system.ammo.type 'infinite')}}
@@ -52,7 +52,7 @@
 
     {{#if traumaDamage}}
       <span>{{localize 'swnr.weapon.trauma.damage'}}:</span>
-      <span class="roll roll-damage">
+      <span class="roll roll-damage" data-damage-role="{{damageRoles.TRAUMA}}">
         {{{traumaDamage}}}
       </span>
     {{/if}}

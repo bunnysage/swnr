@@ -1,5 +1,10 @@
 import SWNBaseGearItem from './base-gear-item.mjs';
 import SWNShared from '../shared.mjs';
+import {
+  DAMAGE_ROLES,
+  THRESHOLD_ATTACK_FLAG_VERSION,
+  buildSourceItemSnapshot,
+} from '../../helpers/injury-thresholds.mjs';
 
 export default class SWNWeapon extends SWNBaseGearItem {
   static LOCALIZATION_PREFIXES = [
@@ -152,10 +157,13 @@ export default class SWNWeapon extends SWNBaseGearItem {
     let hitRoll = new Roll(dieString, rollData);
     hitRoll = this.safeDamageRoll(hitRoll);
     await hitRoll.roll();
-    rollData.hitRoll = +(hitRoll.dice[0].total?.toString() ?? 0);
+    const naturalHitDie = +(hitRoll.dice[0].total?.toString() ?? 0);
+    const attackTotal = Number(hitRoll.total) || 0;
+    rollData.hitRoll = attackTotal;
+    rollData.naturalHitDie = naturalHitDie;
 
     // Detect natural 20 for critical hits
-    const isCriticalHit = rollData.hitRoll === 20;
+    const isCriticalHit = naturalHitDie === 20;
 
     let traumaRollRender = null;
     let traumaDamage = null;
@@ -254,6 +262,7 @@ export default class SWNWeapon extends SWNBaseGearItem {
       actor,
       weapon: this.parent,
       hitRoll,
+      damageRoles: DAMAGE_ROLES,
       stat,
       damageRoll,
       burstFire,
@@ -297,24 +306,46 @@ export default class SWNWeapon extends SWNBaseGearItem {
       content: chatContent
     };
 
+    const isPersonalScaleWeapon = actor.type === "character" || actor.type === "npc";
+    const thresholdAttack = isPersonalScaleWeapon ? {
+      v: THRESHOLD_ATTACK_FLAG_VERSION,
+      system: "swnr",
+      attackTotal,
+      naturalDie: naturalHitDie,
+      sourceActorId: actor.id,
+      sourceActorUuid: actor.uuid,
+      sourceItemId: item.id,
+      sourceItemUuid: item.uuid,
+      sourceItemSnapshot: buildSourceItemSnapshot(item),
+      baseDamageFormula: this.damage,
+      normalDamageTotal: damageRoll?.total ?? null,
+      isMelee: Boolean(this.isMelee),
+      isPersonalScaleWeapon,
+      authorUserId: game.user?.id ?? null,
+    } : null;
+
     // Always set isCriticalHit flag on the message for reliable detection
     chatData.flags = {
       swnr: {
         isCriticalHit: isCriticalHit,
       }
     };
+    if (thresholdAttack) chatData.flags.swnr.thresholdAttack = thresholdAttack;
 
     if (!damageRollEnabled) {
       chatData.flags.swnr.damageRoll = {
         formula: damageRoll.formula,
         damageExplain: damageExplainTip,
         actorId: actor.id,
+        actorUuid: actor.uuid,
         flavor: `Damage roll for ${dialogData.weapon.name}`,
         weaponId: this.id,
+        weaponUuid: item.uuid,
         traumaFormula: traumaRoll?.formula || null,
         traumaRating: traumaRating,
         isCriticalHit: isCriticalHit,
       };
+      if (thresholdAttack) chatData.flags.swnr.damageRoll.thresholdAttack = thresholdAttack;
     }
     getDocumentClass("ChatMessage").applyRollMode(chatData, rollMode);
     getDocumentClass("ChatMessage").create(chatData);

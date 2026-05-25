@@ -21,6 +21,7 @@ export { default as SWNArmor } from './items/item-armor.mjs';
 export { default as SWNCyberware } from './items/item-cyberware.mjs';
 export { default as SWNProgram } from './items/item-program.mjs';
 export { default as SWNAsset } from './items/item-asset.mjs';
+export { default as SWNInjury } from './items/item-injury.mjs';
 export { default as SWNShipWeapon } from './items/item-ship-weapon.mjs';
 export { default as SWNShipFitting } from './items/item-ship-fitting.mjs';
 export { default as SWNShipDefense } from './items/item-ship-defense.mjs';

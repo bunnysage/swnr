@@ -82,7 +82,7 @@
       use both the "grid" and "grid-Ncol" class where "N" can be any number
       from 1 to 12 and will create that number of columns.  }}
     <div class='header-fields'>
-    <div class='resources grid grid-7col' style="gap: 4px;">
+    <div class='resources grid grid-8col' style="gap: 4px;">
       
       <div class='document-name grid-span-3 flex flexrow'><!-- Name -->
         <input
@@ -181,7 +181,7 @@
 
       <div class="resource flex-group-center"><!-- AC -->
         <div class="field resource-content">
-            {{system.ac}}          
+            {{system.ac}}
             {{#if (eq gameSettings.useCWNArmor true)}}
             / {{system.meleeAc}}
             {{/if}}
@@ -192,6 +192,23 @@
           {{else}}
             {{localize 'swnr.sheet.ac'}}
           {{/if}}
+        </label>
+      </div>
+
+      <div class="resource flex-group-center"><!-- Injury Resistance -->
+        <div class="field resource-content">
+          <input
+            type='number'
+            name='system.injuryResistance'
+            value='{{system.injuryResistance}}'
+            data-dtype='Number'
+            class='nested-field header'
+            min='0'
+            {{#unless canEditInjuryResistance}}readonly{{/unless}}
+          />
+        </div>
+        <label class='resource-label' data-tooltip="{{localize 'swnr.sheet.injuryResistanceHint'}}">
+          {{localize 'swnr.sheet.injuryResistanceShort'}}
         </label>
       </div>
 

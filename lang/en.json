@@ -514,6 +514,7 @@
         "WeaponDetails": "Weapon Details",
         "ProgramDetails": "Program Details",
         "ArmorDetails": "Armor Details",
+        "InjuryDetails": "Injury Details",
         "AssetDetails": "Asset Details",
         "AssetAtkDef": "Attack / Defense",
         "ShipWeaponDetailsEffects": "Weapon Details"
@@ -1508,6 +1509,8 @@
       "species": "Species/Gender",
       "level": "Level",
       "stats": "Stats",
+      "injuryResistanceShort": "Injury Res.",
+      "injuryResistanceHint": "Manual threshold injury resistance. Default 0 means unprotected until a GM assigns a value.",
       "base": "Base",
       "boosts": "Boosts",
       "bonus": "Bonus",
@@ -1996,6 +1999,8 @@
       "useStressHint": "Use AWN stress attribute for characters?",
       "useDeathAndDismemberment": "Use Death & Dismemberment?",
       "useDeathAndDismembermentHint": "Enable Goblin Punch-style critical injuries when HP reaches 0. Disables automatic defeated status.",
+      "useThresholdInjuries": "Use Threshold Injuries?",
+      "useThresholdInjuriesHint": "Enable opt-in personal weapon threshold injury checks using 1d10 against 8 + injury resistance - edge.",
       "useAWNVehicle": "Use AWN Vehicle Options?",
       "useAWNVehicleHint": "Use AWN vehicle options (Run Hours, Fuel, etc)?",
       "useAWNGearCondition": "Use AWN Gear Condition?",
@@ -2038,6 +2043,7 @@
       "criticalHit": "Critical Hit!",
       "criticalDamage": "Critical Damage",
       "criticalInjury": "Critical Injury!",
+      "thresholdInjury": "Threshold Injury!",
       "healthButtons": {
         "fullDamage": "Apply full damage to selected token(s)",
         "halfDamage": "Apply half damage to selected token(s)",
@@ -2053,6 +2059,9 @@
         "fail16-17": "Drill successful, but takes twice base time",
         "fail18": "Drill successful and on time, by blind luck."
       }
+    },
+    "notifications": {
+      "injuryResistanceGMOnly": "Only a GM can change injury resistance."
     },
     "ammo": {
       "ammo": "Standard Ammo",
@@ -2300,10 +2309,23 @@
     "injury": {
       "minor": "Minor Injury",
       "moderate": "Moderate Injury",
+      "serious": "Serious Injury",
+      "severe": "Severe Injury",
+      "thresholdMinor": "Minor Threshold Injury",
+      "thresholdModerate": "Moderate Threshold Injury",
+      "thresholdSerious": "Serious Threshold Injury",
+      "thresholdSevere": "Severe Threshold Injury",
+      "records": "Injuries",
       "location": "Location",
       "severity": "Severity",
       "injuries": "Injuries",
       "wounds": "Wounds",
+      "edge": "Edge",
+      "resistance": "Resistance",
+      "thresholdDie": "Threshold die",
+      "hiddenTarget": "Hidden target",
+      "unknownSource": "Unknown attack",
+      "thresholdPublic": "{target} suffers a {severity} from {weapon}: {location}.",
       "nowAt": "now at",
       "hp": "HP"
     },

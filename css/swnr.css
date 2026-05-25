@@ -259,6 +259,22 @@
   color: #721c24;
 }
 
+.chat-message .injury-type-serious {
+  background: rgba(192, 57, 43, 0.24);
+  border: 1px solid #c0392b;
+  color: #641e16;
+}
+
+.chat-message .injury-type-severe {
+  background: rgba(80, 45, 120, 0.22);
+  border: 1px solid #5b2c83;
+  color: #351c4d;
+}
+
+.chat-message .threshold-injury-banner {
+  background: linear-gradient(135deg, #6b1f1f 0%, #b03a2e 52%, #44224f 100%);
+}
+
 .chat-message.injury-message .injury-type-indicator {
   margin-bottom: 10px;
   padding: 5px;
@@ -560,6 +576,18 @@
   background: rgba(231, 76, 60, 0.3);
   border-color: #e74c3c;
   color: #ff6b6b;
+}
+
+.theme-dark .chat-message .injury-type-serious {
+  background: rgba(192, 57, 43, 0.32);
+  border-color: #c0392b;
+  color: #ff8a80;
+}
+
+.theme-dark .chat-message .injury-type-severe {
+  background: rgba(116, 69, 173, 0.32);
+  border-color: #8e44ad;
+  color: #d7b5f8;
 }
 
 .theme-dark .chat-message .dice-calculation {

@@ -97,6 +97,7 @@ Hooks.once('init', function () {
     cyberware: models.SWNCyberware,
     program: models.SWNProgram,
     asset: models.SWNAsset,
+    injury: models.SWNInjury,
     power: models.SWNPower,
     shipWeapon: models.SWNShipWeapon,
     shipFitting: models.SWNShipFitting,

@@ -114,6 +114,9 @@ export class SWNItemSheet extends api.HandlebarsApplicationMixin(
     attributesArmor: {
       template: 'systems/swnr/templates/item/attribute-parts/armor.hbs',
     },
+    attributesInjury: {
+      template: 'systems/swnr/templates/item/attribute-parts/injury.hbs',
+    },
     attributesShipWeapon: {
       template: 'systems/swnr/templates/item/attribute-parts/ship-weapon.hbs'
     },
@@ -186,6 +189,10 @@ export class SWNItemSheet extends api.HandlebarsApplicationMixin(
       case 'armor':
         options.parts.push('attributesArmor');
         options.defaultTab = 'armor';
+        break;
+      case 'injury':
+        options.parts.push('attributesInjury');
+        options.defaultTab = 'injury';
         break;
       case 'cyberware':
         options.parts.push('attributesCyberware');
@@ -274,6 +281,7 @@ export class SWNItemSheet extends api.HandlebarsApplicationMixin(
       case 'attributesShipDefense':
       case 'attributesShipFitting':
       case 'attributesShipWeapon':
+      case 'attributesInjury':
         // Necessary for preserving active tab on re-render
         context.tab = context.tabs[partId];
         break;
@@ -342,6 +350,10 @@ export class SWNItemSheet extends api.HandlebarsApplicationMixin(
         case 'attributesArmor':
           tab.id = 'armor';
           tab.label += 'ArmorDetails';
+          break;
+        case 'attributesInjury':
+          tab.id = 'injury';
+          tab.label += 'InjuryDetails';
           break;
         case 'attributesFeature':
         case 'attributesItem':
