@@ -411,8 +411,12 @@ export async function applyHealthDrop(total, options = {}) {
             await actor.applyWounds(excessDamage);
           } else if (isCriticalHit) { // HP > 0 but critical hit - apply critical injury
             const maxHealth = actor.system.health.max;
-            const hpPercentage = newHealth / maxHealth;
-            await actor.applyCriticalInjury(hpPercentage);
+            if (maxHealth <= 0) {
+              console.warn(`SWNR | Cannot calculate critical injury for ${actor.name}: max HP is ${maxHealth}`);
+            } else {
+              const hpPercentage = newHealth / maxHealth;
+              await actor.applyCriticalInjury(hpPercentage);
+            }
           }
         }
         

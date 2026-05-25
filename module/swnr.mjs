@@ -49,6 +49,14 @@ globalThis.swnr = {
   refreshDay: () => refreshOrchestrator.refreshMany({ cadence: 'day' }),
   getRefreshStatus: refreshHelpers.getRefreshStatus,
   models,
+  /**
+   * Debug API for testing - use in browser console
+   * @example swnr.debug.forceCriticalHits = true  // Force all attacks to crit
+   * @example swnr.debug.forceCriticalHits = false // Return to normal behavior
+   */
+  debug: {
+    forceCriticalHits: false,
+  },
 };
 
 Hooks.once('init', function () {
@@ -100,7 +108,9 @@ Hooks.once('init', function () {
     power: models.SWNPower,
     shipWeapon: models.SWNShipWeapon,
     shipFitting: models.SWNShipFitting,
-    shipDefense: models.SWNShipDefense
+    shipDefense: models.SWNShipDefense,
+    injury: models.SWNInjury,
+    class: models.SWNFeature  // Legacy support for old "class" items
   };
 
   // Active Effects are never copied to the Actor,

@@ -161,22 +161,20 @@
         center all of its child elements content and text. }}
 
 
-      {{#if (eq actor.type 'character')}} <!-- AB  | Soak -->
+      {{! AB for both characters and NPCs }}
+      {{#if (or (eq actor.type 'character') (eq actor.type 'npc'))}}
         {{formGroup systemFields.ab value=system.ab localize=true widget=headerWidget}}
-      {{else}}
-        {{#if (eq gameSettings.useCWNArmor true)}}
-        <div class="resource flex-group-center"><!-- AC -->
+      {{/if}}
+      {{! Soak for NPCs with CWN armor }}
+      {{#if (and (eq actor.type 'npc') (eq gameSettings.useCWNArmor true))}}
+        <div class="resource flex-group-center">
           <div class="field resource-content">
-              {{system.soakTotal.value}}          
-              {{#if (eq gameSettings.useCWNArmor true)}}
-              / {{system.soakTotal.max}}
-              {{/if}}
+              {{system.soakTotal.value}} / {{system.soakTotal.max}}
           </div>
           <label class='resource-label'>
             {{localize 'SWN.Actor.NPC.FIELDS.soakTotal.label'}}
           </label>
         </div>
-        {{/if}}
       {{/if}}
 
       <div class="resource flex-group-center"><!-- AC -->
@@ -220,9 +218,6 @@
         {{/if}}
       {{/if}}
     
-      {{#if (eq actor.type 'npc')}}
-      
-      {{/if}}
 
       {{#if (eq gameSettings.showAccess true)}}
         {{formGroup systemFields.access value=system.access localize=true widget=headerWidget readonly=1}}
@@ -290,6 +285,31 @@
             {{/if}}
         </div><!-- end grid -->
       </div><!-- end resource-group -->
+      {{/if}}
+
+      {{! NPC Second Row: Inj/Wnd as separate grid item (like character) }}
+      {{#if (eq actor.type 'npc')}}
+        {{#if (eq gameSettings.useDeathAndDismemberment true)}}
+        <div class="resource flex-group-center">
+          <div class="field resource-content">
+            <input type='number' name='system.injuries' value='{{system.injuries}}'
+                   data-dtype='Number' class='nested-field header' />
+            <span class="nested-sep">/</span>
+            <input type='number' name='system.wounds' value='{{system.wounds}}'
+                   data-dtype='Number' class='nested-field header' />
+          </div>
+          <label class='resource-label'>Inj/Wnd</label>
+        </div>
+        {{/if}}
+
+        {{! Save button for NPCs }}
+        <div class='resource flex-group-center grid-span-4' style="display: flex; align-items: center; justify-content: flex-start; gap: 10px;">
+          <div class="save-throw-button" data-save-type="npc" data-action="rollSave">
+            <i class="fas fa-dice-d20" style="margin-right:5px;"></i>
+            <p class="difficulty">v{{system.saves}}</p>
+            <p>&nbsp;{{localize 'swnr.sheet.saves.save'}}</p>
+          </div>
+        </div>
       {{/if}}
 
       {{!-- AC shield --}}

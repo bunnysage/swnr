@@ -196,6 +196,36 @@
   --input-focus-color: rgb(5, 99, 150);
 }
 
+.chat-message .chat-card .nat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.chat-message .chat-card .nat-badge i {
+  font-size: 0.65rem;
+}
+
+.chat-message .chat-card .nat-crit {
+  background: rgba(39, 174, 96, 0.15);
+  border-color: rgba(39, 174, 96, 0.45);
+  color: #1f8c5a;
+}
+
+.chat-message .chat-card .nat-fumble {
+  background: rgba(231, 76, 60, 0.15);
+  border-color: rgba(231, 76, 60, 0.45);
+  color: #a12a2a;
+}
+
 .chat-message .card-buttons {
   display: flex;
   flex-wrap: wrap;
@@ -204,6 +234,19 @@
 }
 
 .chat-message .critical-hit-banner {
+  background: linear-gradient(135deg, #4a4a4a 0%, #5a5a5a 50%, #4a4a4a 100%);
+  color: #fff;
+  padding: 0.4rem 0.75rem;
+  margin: 0.5rem 0;
+  text-align: center;
+  font-weight: bold;
+  font-size: 1em;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border-radius: 4px;
+}
+
+.chat-message .critical-injury-banner {
   background: linear-gradient(135deg, #8B0000 0%, #DC143C 50%, #8B0000 100%);
   color: #fff;
   padding: 0.5rem 1rem;
@@ -216,35 +259,8 @@
   border-radius: 4px 4px 0 0;
 }
 
-.chat-message .critical-hit-banner i {
+.chat-message .critical-injury-banner i {
   margin-right: 0.5rem;
-  animation: pulse 1s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.6;
-  }
-}
-.chat-message .roll-critical {
-  border: 2px solid #DC143C !important;
-  background: rgba(220, 20, 60, 0.1) !important;
-}
-
-.chat-message .critical-damage-section {
-  margin-top: 0.5rem;
-  padding: 0.25rem;
-  border-left: 3px solid #DC143C;
-  padding-left: 0.5rem;
-}
-
-.chat-message .critical-damage-value {
-  font-weight: bold;
-  color: #DC143C;
-  font-size: 1.1em;
 }
 
 .chat-message .injury-type-minor {
@@ -280,8 +296,23 @@
   color: #8B0000;
 }
 
+.chat-message.injury-message .severity-section .severity-roll {
+  margin-bottom: 0.5rem;
+}
+
 .chat-message.injury-message .severity-section .severity-total {
-  margin: 10px 0;
+  margin: 0.5rem 0;
+}
+
+.chat-message.injury-message .severity-section .dice-modifiers summary {
+  cursor: pointer;
+  font-size: 0.85em;
+  color: var(--color-text-light-6);
+  padding: 0.25rem 0;
+}
+
+.chat-message.injury-message .severity-section .dice-modifiers summary:hover {
+  color: var(--color-text-light-7);
 }
 
 .chat-message.injury-message .severity-section .dice-calculation {
@@ -455,6 +486,18 @@
 
 .chat-message .test-summary ul li {
   margin-bottom: 0.25rem;
+}
+
+.theme-dark .chat-message .chat-card .nat-crit {
+  background: rgba(39, 174, 96, 0.2);
+  border-color: rgba(39, 174, 96, 0.55);
+  color: #7ff0b6;
+}
+
+.theme-dark .chat-message .chat-card .nat-fumble {
+  background: rgba(231, 76, 60, 0.2);
+  border-color: rgba(231, 76, 60, 0.6);
+  color: #ff9d8f;
 }
 
 .swnr .consume-select-container .consume-select-header {
@@ -2025,6 +2068,65 @@
   background: var(--color-bg-dark);
   border-color: var(--color-border-dark);
   color: var(--color-text-light-secondary);
+}
+.swnr .injury-details {
+  padding: 8px;
+}
+.swnr .injury-details h3 {
+  margin-top: 16px;
+}
+.swnr .injury-details h3:first-child {
+  margin-top: 0;
+}
+.swnr .injury-info {
+  margin-top: 8px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+.swnr .injury-info .flexrow {
+  margin-bottom: 8px;
+}
+.swnr .injury-info .flexrow:last-child {
+  margin-bottom: 0;
+}
+.swnr .injury-info .flexrow strong {
+  flex: 0 0 120px;
+}
+.swnr .injury-effect {
+  margin-top: 8px;
+  padding: 8px;
+  background: rgba(200, 100, 100, 0.1);
+  border-radius: 4px;
+  border-left: 3px solid #c44;
+}
+.swnr .injuries-list .injury-item .item-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.swnr .injuries-list .injury-item .item-name .item-image i {
+  font-size: 20px;
+  width: 24px;
+  text-align: center;
+}
+.swnr .injuries-list .injury-item .injury-info {
+  display: flex;
+  flex-direction: column;
+  margin-top: 0;
+  padding: 0;
+  background: none;
+}
+.swnr .injuries-list .injury-item .injury-location {
+  font-size: 0.8em;
+  opacity: 0.7;
+}
+.swnr .injuries-list .injury-item .injury-location i {
+  color: green;
+}
+.swnr .injuries-list .no-injuries {
+  opacity: 0.6;
+  font-style: italic;
 }
 .swnr .drop-target {
   background-color: rgba(var(--accent-color), 0.3);

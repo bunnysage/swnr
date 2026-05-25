@@ -242,6 +242,11 @@ export default class SWNShipWeapon extends SWNVehicleItemBase {
       const damageRollStr = `${this.damage} + @statMod + @burstFire`;
       const hitRoll = new Roll(hitRollStr, rollData);
       await hitRoll.roll();
+      const baseDie = hitRoll.dice?.[0];
+      const baseDieResult = baseDie?.results?.[0]?.result ?? null;
+      const baseIsD20 = baseDie?.faces === 20;
+      const isNat20 = baseIsD20 && baseDieResult === 20;
+      const isNat1 = baseIsD20 && baseDieResult === 1;
       const damageRoll = new Roll(damageRollStr, rollData);
       await damageRoll.roll();
 
@@ -306,6 +311,9 @@ export default class SWNShipWeapon extends SWNVehicleItemBase {
         diceTooltip,
         traumaDamage,
         traumaRollRender,
+        natRollValue: baseDieResult,
+        isNat20,
+        isNat1,
       };
 
       const rollMode = game.settings.get("core", "rollMode");

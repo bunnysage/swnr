@@ -57,3 +57,7 @@ await actor.updateEmbeddedDocuments('Item', payload);
   - Utilities: `src/scss/utils/*.scss`
 - After SCSS changes, run `npm run build` to compile CSS.
 - For development, use `npm run watch` for auto-compilation.
+
+## Git Workflow
+- Always push to the `bunnysage` remote, not `origin` (wintersleepAI).
+- Create PRs on `bunnysage/swnr`, not `wintersleepAI/swnr`.

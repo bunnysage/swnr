@@ -705,6 +705,31 @@
           }
         }
       },
+      "Injury": {
+        "FIELDS": {
+          "location": {
+            "label": "Location"
+          },
+          "side": {
+            "label": "Side"
+          },
+          "severity": {
+            "label": "Severity"
+          },
+          "daysRemaining": {
+            "label": "Days Remaining"
+          },
+          "treated": {
+            "label": "Treated"
+          },
+          "injuryType": {
+            "label": "Type"
+          }
+        },
+        "details": "Injury Details",
+        "duration": "Duration",
+        "mechanicalEffect": "Mechanical Effect"
+      },
       "Program": {
         "FIELDS": {
           "type": {
@@ -1084,7 +1109,9 @@
       "asset": "Asset",
       "shipWeapon": "Ship/Vehicle Weapon",
       "shipDefense": "Ship/Vehicle Defense",
-      "shipFitting": "Ship/Vehicle Fitting/Item"
+      "shipFitting": "Ship/Vehicle Fitting/Item",
+      "injury": "Injury",
+      "class": "Class"
     }
   },
   "swnr": {
@@ -1992,6 +2019,8 @@
       "attackRollHint": "What to roll for attacks?",
       "useTrauma": "Use CWN Trauma?",
       "useTraumaHint": "Use CWN trauma dice for rolling attacks?",
+      "useCriticalHits": "Use Critical Hits",
+      "useCriticalHitsHint": "Enable the critical hit system. On a natural 20, damage is doubled. This setting is typically mutually exclusive with the Trauma system.",
       "useStress": "Use AWN Stress?",
       "useStressHint": "Use AWN stress attribute for characters?",
       "useDeathAndDismemberment": "Use Death & Dismemberment?",
@@ -2035,7 +2064,7 @@
       "statRoll": "Roll stats for {name}",
       "savemoddesc": "(Positive makes easier, negative harder)",
       "rerollButton": "Reroll",
-      "criticalHit": "Critical Hit!",
+      "criticalHit": "Critical Hit",
       "criticalDamage": "Critical Damage",
       "criticalInjury": "Critical Injury!",
       "healthButtons": {
@@ -2043,6 +2072,12 @@
         "halfDamage": "Apply half damage to selected token(s)",
         "fullHealing": "Apply full healing to selected token(s)",
         "fullDamageModified": "Apply full damage with modifier to selected token(s)"
+      },
+      "natural": {
+        "crit": "Nat 20",
+        "critTooltip": "Natural 20 on the attack die",
+        "fumble": "Nat 1",
+        "fumbleTooltip": "Natural 1 on the attack die"
       },
       "spike": {
         "fail3": "Catastrophic dimensional energy incursion.  Ship emerges around a star within 1d6 hexes  of the target destination with drive and all systems destroyed.",
@@ -2298,10 +2333,21 @@
       "mech": "Mech"
     },
     "injury": {
+      "title": "Injuries",
+      "add": "Add Injury",
+      "none": "No injuries",
       "minor": "Minor Injury",
       "moderate": "Moderate Injury",
-      "location": "Location",
+      "wound": "Wound",
+      "locationLabel": "Location",
+      "location": {
+        "arm": "Arm",
+        "leg": "Leg",
+        "torso": "Torso",
+        "head": "Head"
+      },
       "severity": "Severity",
+      "modifiers": "Modifiers",
       "injuries": "Injuries",
       "wounds": "Wounds",
       "nowAt": "now at",

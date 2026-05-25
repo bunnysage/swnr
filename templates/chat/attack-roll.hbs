@@ -3,22 +3,29 @@
 
   {{#if isCriticalHit}}
   <div class="critical-hit-banner">
-    <i class="fas fa-skull-crossbones"></i>
     {{localize 'swnr.chat.criticalHit'}}
   </div>
   {{/if}}
 
   <span>To Hit:</span>
-  <span title="{{ diceTooltip.hitExplain }}" class="roll roll-hit {{#if isCriticalHit}}roll-critical{{/if}}">{{{ diceTooltip.hit }}}</span>
+  <span title="{{ diceTooltip.hitExplain }}" class="roll roll-hit">{{{ diceTooltip.hit }}}</span>
+  {{#if isNat20}}
+    <span class="nat-badge nat-crit" data-tooltip="{{localize 'swnr.chat.natural.critTooltip'}}">
+      <i class="fas fa-star"></i> {{localize 'swnr.chat.natural.crit'}}
+    </span>
+  {{/if}}
+  {{#if isNat1}}
+    <span class="nat-badge nat-fumble" data-tooltip="{{localize 'swnr.chat.natural.fumbleTooltip'}}">
+      <i class="fas fa-exclamation-triangle"></i> {{localize 'swnr.chat.natural.fumble'}}
+    </span>
+  {{/if}}
 
   {{# if diceTooltip.damage}}
   <span>{{localize 'swnr.weapon.damage'}}:</span>
   <span title="{{ diceTooltip.damageExplain }}" class="roll roll-damage">{{{ diceTooltip.damage }}}</span>
   {{#if isCriticalHit}}
-  <div class="critical-damage-section" data-critical="true">
-    <span>{{localize 'swnr.chat.criticalDamage'}}:</span>
-    <span class="roll roll-damage roll-critical">{{{criticalDamageRender}}}</span>
-  </div>
+  <span>{{localize 'swnr.chat.criticalDamage'}}:</span>
+  <span class="roll roll-damage">{{{ criticalDamageRender }}}</span>
   {{/if}}
   {{else}}
   <div class="flex-center" data-tooltip="{{diceTooltip.damageExplain}}" {{#if isCriticalHit}}data-critical="true"{{/if}}>

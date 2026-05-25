@@ -153,9 +153,16 @@ export default class SWNWeapon extends SWNBaseGearItem {
     hitRoll = this.safeDamageRoll(hitRoll);
     await hitRoll.roll();
     rollData.hitRoll = +(hitRoll.dice[0].total?.toString() ?? 0);
+    const baseDie = hitRoll.dice?.[0];
+    const baseDieResult = baseDie?.results?.[0]?.result ?? null;
+    const baseIsD20 = baseDie?.faces === 20;
+    const isNat20 = baseIsD20 && baseDieResult === 20;
+    const isNat1 = baseIsD20 && baseDieResult === 1;
 
-    // Detect natural 20 for critical hits
-    const isCriticalHit = rollData.hitRoll === 20;
+    // Check if critical hits are enabled (setting or debug override)
+    const criticalHitsEnabled = game.settings.get("swnr", "useCriticalHits") || globalThis.swnr?.debug?.forceCriticalHits;
+    // Debug override forces all hits to be critical; otherwise requires natural 20
+    const isCriticalHit = criticalHitsEnabled && (isNat20 || globalThis.swnr?.debug?.forceCriticalHits);
 
     let traumaRollRender = null;
     let traumaDamage = null;
@@ -243,11 +250,12 @@ export default class SWNWeapon extends SWNBaseGearItem {
     }
 
     // Calculate critical damage (doubled) if damage was rolled
-    let criticalDamageTotal = null;
     let criticalDamageRender = null;
     if (isCriticalHit && damageRoll?.total) {
-      criticalDamageTotal = damageRoll.total * 2;
-      criticalDamageRender = `<span class="critical-damage-value">${criticalDamageTotal}</span> (${damageRoll.total} × 2)`;
+      // Create a Roll like trauma damage does - gets Foundry's native dice styling
+      const criticalDamageRoll = new Roll(`${damageRoll.total} * 2`);
+      await criticalDamageRoll.roll();
+      criticalDamageRender = await criticalDamageRoll.render();
     }
 
     const dialogData = {
@@ -269,9 +277,11 @@ export default class SWNWeapon extends SWNBaseGearItem {
       shock_content,
       traumaDamage,
       traumaRollRender,
+      natRollValue: baseDieResult,
+      isNat20,
+      isNat1,
       gearCondition,
       isCriticalHit,
-      criticalDamageTotal,
       criticalDamageRender,
     };
     const rollMode = game.settings.get("core", "rollMode");
