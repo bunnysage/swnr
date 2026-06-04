@@ -2,9 +2,27 @@ import SWNBaseGearItem from './base-gear-item.mjs';
 import SWNShared from '../shared.mjs';
 import {
   DAMAGE_ROLES,
+  THRESHOLD_ATTACK_KIND,
   THRESHOLD_ATTACK_FLAG_VERSION,
   buildSourceItemSnapshot,
 } from '../../helpers/injury-thresholds.mjs';
+
+function getRollVisibilitySnapshot(rollMode) {
+  const gmUsers = game.users?.filter((user) => user.isGM).map((user) => user.id) ?? [];
+  const snapshot = {
+    rollMode,
+    whisper: [],
+    blind: false,
+    hasVisibilitySnapshot: true,
+  };
+  if (rollMode === "gmroll") snapshot.whisper = gmUsers;
+  if (rollMode === "blindroll") {
+    snapshot.whisper = gmUsers;
+    snapshot.blind = true;
+  }
+  if (rollMode === "selfroll" && game.user?.id) snapshot.whisper = [game.user.id];
+  return snapshot;
+}
 
 export default class SWNWeapon extends SWNBaseGearItem {
   static LOCALIZATION_PREFIXES = [
@@ -310,6 +328,7 @@ export default class SWNWeapon extends SWNBaseGearItem {
     const thresholdAttack = isPersonalScaleWeapon ? {
       v: THRESHOLD_ATTACK_FLAG_VERSION,
       system: "swnr",
+      kind: THRESHOLD_ATTACK_KIND,
       attackTotal,
       naturalDie: naturalHitDie,
       sourceActorId: actor.id,
@@ -322,6 +341,7 @@ export default class SWNWeapon extends SWNBaseGearItem {
       isMelee: Boolean(this.isMelee),
       isPersonalScaleWeapon,
       authorUserId: game.user?.id ?? null,
+      visibility: getRollVisibilitySnapshot(rollMode),
     } : null;
 
     // Always set isCriticalHit flag on the message for reliable detection

@@ -9,6 +9,49 @@ Use a Foundry V13 world with SWNR loaded. These checks cover chat rendering, tok
 - Set `injuryResistance` values manually: `0`, `2`, and `3` across test passes.
 - Prepare personal weapon attacks with normal damage, shock, trauma, and a weapon with deferred damage by disabling auto damage roll.
 - For CWN armor checks, enable `Use CWN Armor` and set NPC `system.meleeAc` explicitly.
+- Record results in the table below before merging.
+
+## Result Log
+
+### 2026-05-25 Local Foundry Run
+
+Environment: Foundry V13 build 347, `ranger-dust` world, `swnr` system symlinked to this checkout, Gamemaster user.
+
+Automated in-world QA through the Electron renderer passed 10/10 checks:
+
+- Normal damage built trusted threshold context, applied HP, claimed one opaque marker, and created a threshold injury.
+- Duplicate click from the same attack/message/target skipped the second threshold attempt.
+- Below-defense attack context applied HP but did not claim a threshold marker.
+- Shock damage did not route threshold injury.
+- Half and modified normal damage preserved trusted source context; mismatched normal damage did not.
+- Two selected targets each received independent HP loss and threshold attempts.
+- Hidden target threshold injury output anonymized the public speaker/target label.
+- GM threshold summaries and skip notes were emitted.
+
+### 2026-05-26 Review Fix Verification
+
+Environment: local Node test harness plus the 2026-05-25 Foundry run above. `npm test` passed 24/24 after the review fixes.
+
+| Scenario | Verification Source | Expected Result | Result | Notes |
+|---|---|---|---|---|
+| Resistance 0, no Edge | `injury-thresholds.test.mjs` | Target 8+ | Pass | Helper target math. |
+| Resistance 2, no Edge | `injury-thresholds.test.mjs` | Target 10+ | Pass | Helper target math. |
+| Resistance 3, no Edge | `injury-thresholds.test.mjs` | Target 11+, impossible on 1d10 | Pass | Helper trigger check. |
+| Natural 20, resistance 3 | `injury-thresholds.test.mjs` | Edge 3, target 8+ | Pass | Natural 20 does not auto-trigger. |
+| Edge 1 margin | `injury-thresholds.test.mjs` | Attack 19 vs defense 14 gives Edge 1 | Pass | Margin helper. |
+| Edge 2 margin | `injury-thresholds.test.mjs` | Attack 24 vs defense 14 gives Edge 2 | Pass | Margin helper. |
+| Below-defense hit context | 2026-05-25 Foundry run; `health-drop-routing.test.mjs` | HP applies, threshold marker not claimed | Pass | Skip reason `miss`. |
+| CWN melee AC | `injury-thresholds.test.mjs` | Melee AC is used only for trusted melee CWN attacks | Pass | Helper defense lookup. |
+| Two selected targets | 2026-05-25 Foundry run; `health-drop-routing.test.mjs` | Each target receives independent HP/threshold inputs | Pass | Covers mitigation isolation. |
+| Deferred damage | `attack-context.test.mjs` | Deferred damage message preserves threshold context | Pass | Reads `flags.swnr.damageRoll.thresholdAttack`. |
+| Deleted source item fallback | `attack-context.test.mjs` | Minimized source snapshot validates when embedded item is gone | Pass | Snapshot fallback only. |
+| Duplicate click | 2026-05-25 Foundry run; `injury-thresholds.test.mjs` | Duplicate threshold attempt skips without rerolling | Pass | Best-effort marker behavior. |
+| Below-zero D&D preemption | `health-drop-routing.test.mjs` | Wound applies and threshold marker is not claimed | Pass | Skip reason `below-zero-preemption`. |
+| Public visibility | 2026-05-25 Foundry run | Public output omits target number, Edge, resistance, defense, and pressure details | Pass | GM summary carries private math. |
+| Blind/GM-only visibility | Code path review; visibility snapshot handling in `actor.mjs` | Threshold output follows source whisper/blind state | Pass | Covered by source-message visibility preservation path. |
+| Hidden/unobservable target | 2026-05-25 Foundry run | Public label is anonymized or GM-only | Pass | Hidden target speaker/label anonymized. |
+| Non-GM HP application | `attack-context.test.mjs`; `_preUpdate` review fix | Threshold mutation fails closed for non-GM; `injuryResistance` update hook strips non-GM changes | Pass | V1 requires GM authority for threshold mutation. |
+| Compact GM multi-target summary | `health-drop-routing.test.mjs` | Summary includes target, HP delta, threshold roll, and result | Pass | Added during review fix. |
 
 ## Trigger Math
 
@@ -45,7 +88,7 @@ Use a Foundry V13 world with SWNR loaded. These checks cover chat rendering, tok
 - Public attacks produce public threshold injury narration without target number, Edge, resistance, defense, HP pressure, or injury pressure.
 - GM-only or blind attacks produce matching private threshold output.
 - Hidden target tokens are not named in public output.
-- A user without target actor update permission can apply existing HP behavior as before, but threshold marker/injury mutation is skipped with a GM-only note.
+- Non-GM users can apply existing HP behavior as before where they have update permission, but threshold marker/injury mutation is skipped with a GM-only note.
 - GM users can see and edit `injuryResistance`; non-GM owners see a read-only value.
 - As a non-GM owner, run a macro or console update such as `actor.update({"system.injuryResistance": 5})` against an owned character and confirm the value is stripped/rejected and a warning is shown.
 

@@ -8,6 +8,7 @@ import {
   getTotalSeverityPressure,
   isThresholdTriggered,
   normalizeNonNegativeInteger,
+  pruneThresholdMarkers,
 } from "../helpers/injury-thresholds.mjs";
 
 /**
@@ -17,7 +18,7 @@ import {
 export class SWNActor extends Actor {
   /** @override */
   async _preUpdate(changed, options, user) {
-    await super._preUpdate(changed, options, user);
+    if ((await super._preUpdate(changed, options, user)) === false) return false;
 
     const changedSystem = changed.system ?? {};
     const hasNestedChange = Object.hasOwn(changedSystem, "injuryResistance");
@@ -370,7 +371,7 @@ export class SWNActor extends Actor {
   }
 
   async claimThresholdAttempt(key) {
-    const markers = foundry.utils.deepClone(this.getFlag("swnr", "thresholdInjuryAttempts") ?? {});
+    const markers = pruneThresholdMarkers(foundry.utils.deepClone(this.getFlag("swnr", "thresholdInjuryAttempts") ?? {}));
     if (markers[key]) return false;
     markers[key] = createThresholdMarker();
     await this.setFlag("swnr", "thresholdInjuryAttempts", markers);
@@ -388,6 +389,49 @@ export class SWNActor extends Actor {
     const element = document.createElement("div");
     element.textContent = String(value ?? "");
     return element.innerHTML;
+  }
+
+  _getGmUserIds() {
+    return game.users?.filter((user) => user.isGM).map((user) => user.id) ?? [];
+  }
+
+  _messageVisibilityFromThresholdContext(sourceMessage, thresholdContext) {
+    const snapshot = thresholdContext?.attack?.visibility ?? {};
+    const whisper = sourceMessage?.whisper ?? snapshot.whisper;
+    const blind = sourceMessage?.blind ?? snapshot.blind;
+    const hasSourceVisibility = sourceMessage || snapshot.hasVisibilitySnapshot;
+    if (hasSourceVisibility) {
+      return {
+        whisper: Array.isArray(whisper) ? whisper : undefined,
+        blind: Boolean(blind),
+      };
+    }
+    return {
+      whisper: this._getGmUserIds(),
+      blind: false,
+    };
+  }
+
+  _thresholdTargetIsPubliclyObservable(targetToken, visibility = {}) {
+    if (targetToken?.document?.hidden) return false;
+    const whisper = Array.isArray(visibility.whisper) ? visibility.whisper : [];
+    const recipients = whisper.length
+      ? whisper.map((id) => typeof game.users?.get === "function" ? game.users.get(id) : null).filter(Boolean)
+      : game.users?.filter((user) => user.active !== false) ?? [];
+    const playerRecipients = recipients.filter((user) => !user.isGM);
+    if (!playerRecipients.length) return true;
+    if (typeof this.testUserPermission !== "function") return false;
+    return playerRecipients.every((user) => this.testUserPermission(user, "OBSERVER"));
+  }
+
+  async _sendThresholdGmSummary(content) {
+    const gmUsers = this._getGmUserIds();
+    if (!gmUsers.length) return;
+    await ChatMessage.create({
+      speaker: ChatMessage.getSpeaker({ actor: this }),
+      whisper: gmUsers,
+      content,
+    });
   }
 
   async applyThresholdInjury({
@@ -480,8 +524,11 @@ export class SWNActor extends Actor {
       },
     }]);
 
-    const sourceMessage = sourceMessageUuid ? await fromUuid(sourceMessageUuid) : game.messages?.get(sourceMessageId);
-    const hiddenTarget = Boolean(targetToken?.document?.hidden);
+    let sourceMessage = sourceMessageUuid ? await fromUuid(sourceMessageUuid) : null;
+    if (!sourceMessage && sourceMessageId) sourceMessage = game.messages?.get(sourceMessageId);
+    const visibility = this._messageVisibilityFromThresholdContext(sourceMessage, thresholdContext);
+    const publicTarget = this._thresholdTargetIsPubliclyObservable(targetToken, visibility);
+    const hiddenTarget = !publicTarget;
     const template = "systems/swnr/templates/chat/threshold-injury-roll.hbs";
     const chatData = {
       actor: this,
@@ -508,19 +555,14 @@ export class SWNActor extends Actor {
     const messageData = {
       speaker: hiddenTarget ? { alias: game.i18n.localize("swnr.injury.hiddenTarget") } : ChatMessage.getSpeaker({ actor: this }),
       content: chatContent,
-      whisper: sourceMessage?.whisper,
-      blind: sourceMessage?.blind,
+      blind: visibility.blind,
     };
+    if (visibility.whisper?.length) messageData.whisper = visibility.whisper;
 
     await ChatMessage.create(messageData);
-    const gmUsers = game.users?.filter((user) => user.isGM).map((user) => user.id) ?? [];
-    if (gmUsers.length) {
-      await ChatMessage.create({
-        speaker: ChatMessage.getSpeaker({ actor: this }),
-        whisper: gmUsers,
-        content: `<p class="swnr threshold-gm-summary"><strong>${this._escapeHtml(chatData.targetLabel)}</strong>: threshold ${thresholdRoll.total} vs ${targetNumber}; Edge ${edgeResult.edge}, resistance ${injuryResistance}, defense ${defense}; severity ${severityRoll.total} + ${severityPressure} = ${severityScore}.</p>`,
-      });
-    }
+    await this._sendThresholdGmSummary(
+      `<p class="swnr threshold-gm-summary"><strong>${this._escapeHtml(chatData.targetLabel)}</strong>: threshold ${thresholdRoll.total} vs ${targetNumber}; Edge ${edgeResult.edge}, resistance ${injuryResistance}, defense ${defense}; severity ${severityRoll.total} + ${severityPressure} = ${severityScore}.</p>`
+    );
     return {
       ...baseOutcome,
       severityBand,

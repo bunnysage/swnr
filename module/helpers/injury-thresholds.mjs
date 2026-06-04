@@ -2,6 +2,8 @@ import { DAMAGE_ROLES } from "./damage-roles.mjs";
 
 export const THRESHOLD_ATTACK_FLAG_VERSION = 1;
 export const THRESHOLD_MARKER_FLAG_VERSION = 1;
+export const THRESHOLD_ATTACK_KIND = "weaponAttack";
+export const THRESHOLD_MARKER_LIMIT = 100;
 export { DAMAGE_ROLES };
 
 export const THRESHOLD_ACTION_FAMILY = "normal";
@@ -122,7 +124,7 @@ export function buildThresholdAttemptKey({
   const actorKey = targetActorId || targetActorUuid || "unknown-actor";
   const tokenKey = targetTokenId || targetTokenUuid || "actor";
   const family = actionFamily || thresholdActionFamilyForRole(damageRole) || "none";
-  return `v${THRESHOLD_MARKER_FLAG_VERSION}:${messageKey}:${family}:${actorKey}:${tokenKey}`;
+  return `v${THRESHOLD_MARKER_FLAG_VERSION}:${hashMarkerTuple(`${messageKey}:${family}:${actorKey}:${tokenKey}`)}`;
 }
 
 export function createThresholdMarker({ now = Date.now } = {}) {
@@ -132,6 +134,23 @@ export function createThresholdMarker({ now = Date.now } = {}) {
     attempted: true,
     ts: timestamp,
   };
+}
+
+export function hashMarkerTuple(value) {
+  let hash = 0x811c9dc5;
+  for (const char of String(value ?? "")) {
+    hash ^= char.charCodeAt(0);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(36);
+}
+
+export function pruneThresholdMarkers(markers = {}, { limit = THRESHOLD_MARKER_LIMIT } = {}) {
+  const entries = Object.entries(markers);
+  if (entries.length <= limit) return markers;
+  return Object.fromEntries(entries
+    .sort(([, left], [, right]) => Number(right?.ts ?? 0) - Number(left?.ts ?? 0))
+    .slice(0, limit));
 }
 
 export function buildSourceItemSnapshot(itemOrSystem = {}) {
@@ -152,6 +171,7 @@ export function isMinimizedSourceSnapshot(snapshot = {}) {
 export function validateThresholdAttackContext(context = {}) {
   if (context.v !== THRESHOLD_ATTACK_FLAG_VERSION) return { valid: false, reason: "version" };
   if (context.system !== "swnr") return { valid: false, reason: "system" };
+  if (context.kind !== THRESHOLD_ATTACK_KIND) return { valid: false, reason: "kind" };
   if (!Number.isFinite(Number(context.attackTotal))) return { valid: false, reason: "attackTotal" };
   if (!Number.isFinite(Number(context.naturalDie))) return { valid: false, reason: "naturalDie" };
   if (!context.sourceActorUuid && !context.sourceActorId) return { valid: false, reason: "sourceActor" };

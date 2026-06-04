@@ -3,11 +3,12 @@ import assert from "node:assert/strict";
 
 import {
   DAMAGE_ROLES,
+  THRESHOLD_ATTACK_KIND,
   buildSourceItemSnapshot,
   isThresholdDamageRole,
   validateThresholdAttackContext,
 } from "../../module/helpers/injury-thresholds.mjs";
-import { validateThresholdProvenance } from "../../module/helpers/chat.mjs";
+import { buildDamageApplicationContext, validateThresholdProvenance } from "../../module/helpers/chat.mjs";
 
 test(".roll-damage alone cannot identify threshold eligibility", () => {
   const renderedDamageRoles = [
@@ -29,6 +30,7 @@ test("valid threshold context stores attack total separately from natural die", 
   const context = {
     v: 1,
     system: "swnr",
+    kind: THRESHOLD_ATTACK_KIND,
     attackTotal: 27,
     naturalDie: 20,
     sourceActorUuid: "Actor.pc",
@@ -64,7 +66,7 @@ test("threshold provenance validates source actor, item, author, and hit roll", 
   ]);
   globalThis.fromUuid = async (uuid) => uuidMap.get(uuid) ?? null;
   globalThis.game = {
-    user: { isGM: false },
+    user: { isGM: true },
     actors: { get: (id) => id === actor.id ? actor : null },
     users: { get: (id) => id === author.id ? author : null },
     settings: { get: () => false },
@@ -73,6 +75,7 @@ test("threshold provenance validates source actor, item, author, and hit roll", 
   const attack = {
     v: 1,
     system: "swnr",
+    kind: THRESHOLD_ATTACK_KIND,
     attackTotal: 27,
     naturalDie: 20,
     sourceActorId: "pc",
@@ -100,4 +103,96 @@ test("threshold provenance validates source actor, item, author, and hit roll", 
   const vehicleActor = { ...actor, type: "vehicle" };
   uuidMap.set(actor.uuid, vehicleActor);
   assert.equal((await validateThresholdProvenance({ attack, message, damageRole: DAMAGE_ROLES.NORMAL })).reason, "source-actor-type");
+});
+
+test("threshold provenance accepts minimized snapshot when embedded source item is gone", async () => {
+  const actor = {
+    id: "pc",
+    uuid: "Actor.pc",
+    type: "character",
+    getEmbeddedDocument: () => null,
+    testUserPermission: () => true,
+  };
+  const message = {
+    speaker: { actor: "pc" },
+    user: "gm",
+    rolls: [{ total: 18, dice: [{ total: 12 }] }],
+  };
+  globalThis.fromUuid = async (uuid) => uuid === actor.uuid ? actor : null;
+  globalThis.game = {
+    user: { isGM: true },
+    actors: { get: (id) => id === actor.id ? actor : null },
+    users: { get: () => ({ id: "gm", isGM: true }) },
+    settings: { get: () => false },
+  };
+
+  const attack = {
+    v: 1,
+    system: "swnr",
+    kind: THRESHOLD_ATTACK_KIND,
+    attackTotal: 18,
+    naturalDie: 12,
+    sourceActorId: "pc",
+    sourceActorUuid: actor.uuid,
+    sourceItemId: "deleted",
+    sourceItemUuid: "Actor.pc.Item.deleted",
+    sourceItemSnapshot: buildSourceItemSnapshot({
+      name: "Rifle",
+      system: { damage: "1d10", isMelee: false },
+    }),
+    isPersonalScaleWeapon: true,
+    authorUserId: "gm",
+  };
+
+  assert.deepEqual(await validateThresholdProvenance({ attack, message, damageRole: DAMAGE_ROLES.NORMAL }), {
+    valid: true,
+    reason: null,
+  });
+});
+
+test("threshold provenance requires GM authority in v1", async () => {
+  globalThis.game = { user: { isGM: false } };
+  assert.deepEqual(await validateThresholdProvenance({
+    attack: {
+      v: 1,
+      system: "swnr",
+      kind: THRESHOLD_ATTACK_KIND,
+      attackTotal: 12,
+      naturalDie: 12,
+      sourceActorUuid: "Actor.pc",
+      sourceItemSnapshot: buildSourceItemSnapshot({ name: "Knife", system: { damage: "1d4", isMelee: true } }),
+    },
+    damageRole: DAMAGE_ROLES.NORMAL,
+  }), { valid: false, reason: "gm-required" });
+});
+
+test("damage application context is derived from message flags, not rendered HTML", () => {
+  const attack = {
+    v: 1,
+    system: "swnr",
+    kind: THRESHOLD_ATTACK_KIND,
+    attackTotal: 19,
+    naturalDie: 14,
+    sourceActorUuid: "Actor.pc",
+    sourceItemSnapshot: buildSourceItemSnapshot({ name: "Rifle", system: { damage: "1d10", isMelee: false } }),
+    normalDamageTotal: 7,
+  };
+  const message = {
+    id: "msg1",
+    uuid: "ChatMessage.msg1",
+    getFlag: (_namespace, key) => key === "thresholdAttack" ? attack : null,
+  };
+  const context = buildDamageApplicationContext({ message, damageRole: DAMAGE_ROLES.NORMAL, amount: 7 });
+  assert.equal(context.thresholdContext.attack, attack);
+  assert.equal(context.isCriticalHit, false);
+  assert.equal(buildDamageApplicationContext({ message, damageRole: DAMAGE_ROLES.NORMAL_HALF, amount: 3 }).thresholdContext.attack, attack);
+  assert.equal(buildDamageApplicationContext({ message, damageRole: DAMAGE_ROLES.NORMAL_MODIFIED, amount: 9 }).thresholdContext.attack, attack);
+  assert.equal(buildDamageApplicationContext({ message, damageRole: DAMAGE_ROLES.NORMAL, amount: 6 }).thresholdContext, null);
+
+  const deferredMessage = {
+    id: "msg2",
+    uuid: "ChatMessage.msg2",
+    getFlag: (_namespace, key) => key === "damageRoll" ? { thresholdAttack: attack } : null,
+  };
+  assert.equal(buildDamageApplicationContext({ message: deferredMessage, damageRole: DAMAGE_ROLES.NORMAL, amount: 7 }).thresholdContext.attack, attack);
 });

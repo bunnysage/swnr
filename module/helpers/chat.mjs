@@ -1,6 +1,8 @@
 import {
   buildThresholdAttemptKey,
+  calculateThresholdEdge,
   DAMAGE_ROLES,
+  getThresholdDefense,
   isThresholdDamageRole,
   validateThresholdAttackContext,
 } from "./injury-thresholds.mjs";
@@ -183,23 +185,8 @@ export function _addHealthButtons(html, message) {
   }
 
   const damageRole = html.dataset.damageRole || DAMAGE_ROLES.MANUAL;
-  const thresholdAttack = message?.getFlag("swnr", "thresholdAttack") ||
-    message?.getFlag("swnr", "damageRoll")?.thresholdAttack ||
-    null;
-  const thresholdValidation = validateThresholdAttackContext(thresholdAttack ?? {});
-  const hasTrustedNormalDamageRole = damageRole === DAMAGE_ROLES.NORMAL &&
-    Number(thresholdAttack?.normalDamageTotal) === Number(total);
-  const thresholdContext = thresholdValidation.valid && hasTrustedNormalDamageRole ? {
-    sourceMessageId: thresholdAttack.sourceAttackMessageId || message?.id,
-    sourceMessageUuid: thresholdAttack.sourceAttackMessageUuid || message?.uuid,
-    message,
-    attack: thresholdAttack,
-    damageRole,
-  } : null;
-
-  // Read critical hit context from message flags for existing critical injury behavior.
-  const isCriticalHit = damageRole === DAMAGE_ROLES.CRITICAL ||
-    Boolean(message?.getFlag("swnr", "isCriticalHit") || message?.getFlag("swnr", "damageRoll")?.isCriticalHit);
+  const damageContext = buildDamageApplicationContext({ message, damageRole, amount: total });
+  const { isCriticalHit, thresholdContext } = damageContext;
 
   // Create buttons using native DOM
   const fullDamageButton = document.createElement("button");
@@ -266,43 +253,35 @@ export function _addHealthButtons(html, message) {
   fullDamageModifiedButton.addEventListener("click", (ev) => {
     ev.stopPropagation();
     const enableButtons = disableHealthButtons(btnContainer);
-    new Dialog({
-      title: "Apply Modifier to Damage",
+    foundry.applications.api.DialogV2.prompt({
+      window: { title: "Apply Modifier to Damage" },
       content: `
-          <form>
-            <div class="form-group">
-              <label>Modifier to damage (${total}) </label>
-              <input type='text' name='inputField'></input>
-            </div>
-          </form>`,
-      buttons: {
-        yes: {
-          icon: "<i class='fas fa-check'></i>",
-          label: `Apply`,
-        },
+        <form>
+          <div class="form-group">
+            <label>Modifier to damage (${total})</label>
+            <input type="text" name="inputField" />
+          </div>
+        </form>`,
+      ok: {
+        icon: "fas fa-check",
+        label: "Apply",
+        callback: (_event, button) => button.form.elements.inputField.value,
       },
-      default: "yes",
-      close: async (dialogHtml) => {
-        const form = dialogHtml[0].querySelector("form");
-        const modifier = form.querySelector('[name="inputField"]')?.value;
-        try {
-          if (modifier && modifier != "") {
-            const nModifier = Number(modifier);
-            if (nModifier) {
-              await applyHealthDrop(total + nModifier, {
-                isCriticalHit,
-                damageRole: damageRole === DAMAGE_ROLES.NORMAL ? DAMAGE_ROLES.NORMAL_MODIFIED : damageRole,
-                thresholdContext,
-              });
-            } else {
-              ui.notifications?.error(modifier + " is not a number");
-            }
-          }
-        } finally {
-          enableButtons();
+      rejectClose: false,
+    }).then(async (modifier) => {
+      if (modifier && modifier !== "") {
+        const nModifier = Number(modifier);
+        if (nModifier) {
+          await applyHealthDrop(total + nModifier, {
+            isCriticalHit,
+            damageRole: damageRole === DAMAGE_ROLES.NORMAL ? DAMAGE_ROLES.NORMAL_MODIFIED : damageRole,
+            thresholdContext,
+          });
+        } else {
+          ui.notifications?.error(modifier + " is not a number");
         }
-      },
-    }).render(true);
+      }
+    }).catch(() => {}).finally(enableButtons);
   });
 
   halfDamageButton.addEventListener("click", (ev) => {
@@ -371,7 +350,15 @@ function canMutateActor(actor) {
 }
 
 function escapeHtml(value) {
-  if (foundry.utils?.escapeHTML) return foundry.utils.escapeHTML(String(value ?? ""));
+  if (globalThis.foundry?.utils?.escapeHTML) return foundry.utils.escapeHTML(String(value ?? ""));
+  if (!globalThis.document) {
+    return String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;");
+  }
   const element = document.createElement("div");
   element.textContent = String(value ?? "");
   return element.innerHTML;
@@ -386,6 +373,98 @@ async function sendThresholdGmNote(message) {
   });
 }
 
+function formatThresholdHpDelta(value) {
+  const amount = Number(value) || 0;
+  if (amount > 0) return `-${amount}`;
+  if (amount < 0) return `+${Math.abs(amount)}`;
+  return "0";
+}
+
+function formatThresholdSummaryRoll(outcome) {
+  if (!outcome.thresholdAttempted) return "not attempted";
+  const roll = outcome.thresholdRoll ?? "?";
+  const target = outcome.targetNumber ?? "?";
+  return `${roll} vs ${target}`;
+}
+
+function formatThresholdSummaryResult(outcome) {
+  if (outcome.duplicate) return "duplicate skipped";
+  if (outcome.thresholdSkippedReason) return `skipped: ${outcome.thresholdSkippedReason}`;
+  if (!outcome.thresholdAttempted) return "not attempted";
+  if (outcome.thresholdTriggered) return outcome.severityBand?.label
+    ? `triggered: ${outcome.severityBand.label}`
+    : "triggered";
+  return "no trigger";
+}
+
+async function sendThresholdApplicationSummary(outcomes, { damageRole, thresholdContext } = {}) {
+  if (!shouldUseThresholdRouting(damageRole, thresholdContext)) return;
+  const rows = outcomes.filter((outcome) =>
+    outcome.thresholdAttempted ||
+    outcome.thresholdSkippedReason ||
+    outcome.duplicate
+  );
+  if (!rows.length) return;
+
+  const gmUsers = game.users?.filter((user) => user.isGM).map((user) => user.id) ?? [];
+  if (!gmUsers.length) return;
+
+  const rowHtml = rows.map((outcome) => `
+    <tr>
+      <td>${escapeHtml(outcome.targetLabel ?? outcome.actorId ?? "Target")}</td>
+      <td>${escapeHtml(formatThresholdHpDelta(outcome.hpApplied))}</td>
+      <td>${escapeHtml(formatThresholdSummaryRoll(outcome))}</td>
+      <td>${escapeHtml(formatThresholdSummaryResult(outcome))}</td>
+    </tr>
+  `).join("");
+
+  await ChatMessage.create({
+    content: `
+      <div class="swnr threshold-gm-summary">
+        <strong>Threshold injury summary</strong>
+        <table>
+          <thead>
+            <tr>
+              <th>Target</th>
+              <th>HP</th>
+              <th>Threshold</th>
+              <th>Result</th>
+            </tr>
+          </thead>
+          <tbody>${rowHtml}</tbody>
+        </table>
+      </div>
+    `,
+    whisper: gmUsers,
+  });
+}
+
+export function buildDamageApplicationContext({ message, damageRole = DAMAGE_ROLES.MANUAL, amount } = {}) {
+  const thresholdAttack = message?.getFlag("swnr", "thresholdAttack") ||
+    message?.getFlag("swnr", "damageRoll")?.thresholdAttack ||
+    null;
+  const thresholdValidation = validateThresholdAttackContext(thresholdAttack ?? {});
+  const normalDamageTotal = Number(thresholdAttack?.normalDamageTotal);
+  const amountNumber = Number(amount);
+  const hasNormalDamageTotal = thresholdAttack?.normalDamageTotal != null && Number.isFinite(normalDamageTotal);
+  const hasTrustedNormalDamageRole =
+    hasNormalDamageTotal && (
+      (damageRole === DAMAGE_ROLES.NORMAL && normalDamageTotal === amountNumber) ||
+      (damageRole === DAMAGE_ROLES.NORMAL_HALF && Math.floor(normalDamageTotal * 0.5) === amountNumber) ||
+      (damageRole === DAMAGE_ROLES.NORMAL_MODIFIED && Number.isFinite(amountNumber))
+    );
+  const thresholdContext = thresholdValidation.valid && hasTrustedNormalDamageRole ? {
+    sourceMessageId: thresholdAttack.sourceAttackMessageId || message?.id,
+    sourceMessageUuid: thresholdAttack.sourceAttackMessageUuid || message?.uuid,
+    message,
+    attack: thresholdAttack,
+    damageRole: DAMAGE_ROLES.NORMAL,
+  } : null;
+  const isCriticalHit = damageRole === DAMAGE_ROLES.CRITICAL ||
+    Boolean(message?.getFlag("swnr", "isCriticalHit") || message?.getFlag("swnr", "damageRoll")?.isCriticalHit);
+  return { isCriticalHit, thresholdContext, damageRole };
+}
+
 export async function applyHealthDrop(total, options = {}) {
   const {
     isCriticalHit = false,
@@ -393,28 +472,45 @@ export async function applyHealthDrop(total, options = {}) {
     thresholdContext = null,
   } = options;
   const originalTotal = Number(total);
-  if (originalTotal == 0) return; // Skip changes of 0
+  if (originalTotal == 0) return []; // Skip changes of 0
 
   const tokens = canvas?.tokens?.controlled;
   if (!tokens || tokens.length == 0) {
     ui.notifications?.error("Please select at least one token");
-    return;
+    return [];
   }
   // console.log(
   //   `Applying health drop ${total} to ${tokens.length} selected tokens`
   // );
 
+  const outcomes = [];
   for (const t of tokens) {
     const actor = t.actor;
     let targetTotal = originalTotal;
     let isDefeated = false;
+    const outcome = {
+      tokenId: t.id,
+      actorId: actor?.id ?? null,
+      targetLabel: t.name || actor?.name || "Target",
+      hpApplied: 0,
+      woundApplied: false,
+      thresholdEligible: false,
+      thresholdAttempted: false,
+      thresholdTriggered: false,
+      thresholdSkippedReason: null,
+      duplicate: false,
+    };
 
     if (!actor) {
       ui.notifications?.error("Error getting actor for token " + t.name);
+      outcome.thresholdSkippedReason = "missing-actor";
+      outcomes.push(outcome);
       continue;
     }
     if (!canMutateActor(actor)) {
       ui.notifications?.warn(`Cannot update ${actor.name}.`);
+      outcome.thresholdSkippedReason = "permission";
+      outcomes.push(outcome);
       continue;
     }
     if (actor.type == "cyberdeck") {
@@ -438,6 +534,7 @@ export async function applyHealthDrop(total, options = {}) {
             ui.notifications?.info(
               `${hacker.name} takes ${damage} damage, now at ${newHealth} health`
             );
+            outcome.hpApplied = damage;
           }
         }
       }
@@ -492,13 +589,15 @@ export async function applyHealthDrop(total, options = {}) {
         }
         //console.log(`Updating ${actor.name} health to ${newHealth}`);
         await actor.update({ "system.health.value": newHealth });
-        
+        outcome.hpApplied = targetTotal;
+
         // Check for death & dismemberment if enabled
         if (game.settings.get("swnr", "useDeathAndDismemberment") &&
             targetTotal > 0) { // Only on damage, not healing
           if (newHealth <= 0) { // HP at 0 or below
             const excessDamage = Math.max(0, targetTotal - oldHealth);
             woundApplied = true;
+            outcome.woundApplied = true;
             await actor.applyWounds(excessDamage);
           } else if (shouldApplyAboveZeroCriticalInjury({ isCriticalHit, damageRole, thresholdContext })) {
             const hpPercentage = newHealth / maxHealth;
@@ -507,7 +606,7 @@ export async function applyHealthDrop(total, options = {}) {
         }
 
         if (targetTotal > 0) {
-          await maybeApplyThresholdInjury({
+          const thresholdOutcome = await maybeApplyThresholdInjury({
             actor,
             token: t,
             damageRole,
@@ -516,8 +615,9 @@ export async function applyHealthDrop(total, options = {}) {
             maxHp: maxHealth,
             woundApplied,
           });
+          if (thresholdOutcome) Object.assign(outcome, thresholdOutcome);
         }
-        
+
         // Taken from Mana
         //https://gitlab.com/mkahvi/fvtt-micro-modules/-/blob/master/pf1-floating-health/floating-health.mjs#L182-194
         const fillColor = targetTotal < 0 ? "0x00FF00" : "0xFF0000";
@@ -532,13 +632,17 @@ export async function applyHealthDrop(total, options = {}) {
             isDefeated = false;
           } else {
             // No defeated-state update needed for this token.
+            outcomes.push(outcome);
             continue;
           }
           await t.combatant?.update({ defeated: isDefeated });
           const status = CONFIG.statusEffects.find(
             (e) => e.id === CONFIG.specialStatusEffects.DEFEATED
           );
-          if (!status) continue;
+          if (!status) {
+            outcomes.push(outcome);
+            continue;
+          }
           const effect = actor && status ? status : CONFIG.controlIcons.defeated;
           if (t.object) {
             await t.object.toggleEffect(effect, {
@@ -554,7 +658,10 @@ export async function applyHealthDrop(total, options = {}) {
         } // End of death & dismemberment check
       }
     }
+    outcomes.push(outcome);
   }
+  await sendThresholdApplicationSummary(outcomes, { damageRole, thresholdContext });
+  return outcomes;
 }
 
 function shouldUseThresholdRouting(damageRole, thresholdContext) {
@@ -601,6 +708,23 @@ async function maybeApplyThresholdInjury({
     return { thresholdSkippedReason: "permission" };
   }
 
+  const attack = thresholdContext?.attack;
+  const edgeResult = calculateThresholdEdge({
+    attackTotal: attack?.attackTotal,
+    defense: getThresholdDefense(actor, {
+      useCWNArmor: game.settings.get("swnr", "useCWNArmor"),
+      isMelee: Boolean(attack?.isMelee ?? attack?.sourceItemSnapshot?.isMelee),
+    }),
+    naturalDie: attack?.naturalDie,
+  });
+  if (!edgeResult.eligible) {
+    return {
+      thresholdEligible: false,
+      thresholdAttempted: false,
+      thresholdSkippedReason: edgeResult.reason,
+    };
+  }
+
   const markerKey = buildThresholdAttemptKey({
     sourceMessageId: thresholdContext.sourceMessageId,
     sourceMessageUuid: thresholdContext.sourceMessageUuid,
@@ -642,6 +766,7 @@ export async function validateThresholdProvenance(thresholdContext) {
   const attack = thresholdContext?.attack;
   const shape = validateThresholdAttackContext(attack ?? {});
   if (!shape.valid) return shape;
+  if (!game.user?.isGM) return { valid: false, reason: "gm-required" };
   if (thresholdContext.damageRole !== DAMAGE_ROLES.NORMAL) return { valid: false, reason: "damage-role" };
 
   const message = thresholdContext.message;

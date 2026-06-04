@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import {
   DAMAGE_ROLES,
+  THRESHOLD_ATTACK_KIND,
   buildSourceItemSnapshot,
   buildThresholdAttemptKey,
   calculateThresholdEdge,
@@ -16,7 +17,9 @@ import {
   getTotalSeverityPressure,
   getWeaponPressure,
   isMinimizedSourceSnapshot,
+  isThresholdTriggered,
   isThresholdDamageRole,
+  pruneThresholdMarkers,
   thresholdActionFamilyForRole,
   validateThresholdAttackContext,
 } from "../../module/helpers/injury-thresholds.mjs";
@@ -25,7 +28,11 @@ test("threshold target math combines resistance and edge", () => {
   assert.equal(getThresholdTargetNumber({ injuryResistance: 0, edge: 0 }), 8);
   assert.equal(getThresholdTargetNumber({ injuryResistance: 1, edge: 1 }), 8);
   assert.equal(getThresholdTargetNumber({ injuryResistance: 2, edge: 2 }), 8);
+  assert.equal(getThresholdTargetNumber({ injuryResistance: 2, edge: 0 }), 10);
   assert.equal(getThresholdTargetNumber({ injuryResistance: 3, edge: 0 }), 11);
+  assert.equal(getThresholdTargetNumber({ injuryResistance: 3, edge: 3 }), 8);
+  assert.equal(isThresholdTriggered({ dieTotal: 10, targetNumber: 10 }), true);
+  assert.equal(isThresholdTriggered({ dieTotal: 10, targetNumber: 11 }), false);
 });
 
 test("edge comes from attack margin, with natural 20 as edge 3", () => {
@@ -93,6 +100,15 @@ test("normal, half, and modified damage share one threshold action family", () =
     buildThresholdAttemptKey({ ...base, damageRole: DAMAGE_ROLES.NORMAL }),
     buildThresholdAttemptKey({ ...base, damageRole: DAMAGE_ROLES.NORMAL_MODIFIED })
   );
+  const key = buildThresholdAttemptKey({
+    sourceMessageUuid: "ChatMessage.secret",
+    targetActorUuid: "Actor.hidden",
+    targetTokenUuid: "Scene.s.Token.private",
+    damageRole: DAMAGE_ROLES.NORMAL,
+  });
+  assert.match(key, /^v1:[a-z0-9]+$/);
+  assert.equal(key.includes("ChatMessage.secret"), false);
+  assert.equal(key.includes("Scene.s.Token.private"), false);
 });
 
 test("weapon, health, and existing injury pressure feed severity with a total cap", () => {
@@ -142,6 +158,7 @@ test("threshold context validation fails closed on malformed or overbroad payloa
   assert.equal(validateThresholdAttackContext({
     v: 1,
     system: "swnr",
+    kind: THRESHOLD_ATTACK_KIND,
     attackTotal: 18,
     naturalDie: 12,
     sourceActorUuid: "Actor.a1",
@@ -150,15 +167,33 @@ test("threshold context validation fails closed on malformed or overbroad payloa
   assert.deepEqual(validateThresholdAttackContext({
     v: 1,
     system: "swnr",
+    kind: THRESHOLD_ATTACK_KIND,
     attackTotal: 18,
     naturalDie: 12,
     sourceActorUuid: "Actor.a1",
     sourceItemSnapshot: { name: "Knife", baseDamageFormula: "1d4", isMelee: true, secrets: "no" },
   }), { valid: false, reason: "sourceSnapshot" });
+  assert.deepEqual(validateThresholdAttackContext({
+    v: 1,
+    system: "swnr",
+    attackTotal: 18,
+    naturalDie: 12,
+    sourceActorUuid: "Actor.a1",
+    sourceItemSnapshot: buildSourceItemSnapshot({ name: "Knife", system: { damage: "1d4", isMelee: true } }),
+  }), { valid: false, reason: "kind" });
 });
 
 test("marker payloads are minimal and opaque", () => {
   const marker = createThresholdMarker({ now: () => 123 });
   assert.deepEqual(marker, { v: 1, attempted: true, ts: 123 });
   assert.deepEqual(Object.keys(marker).sort(), ["attempted", "ts", "v"]);
+});
+
+test("threshold marker pruning keeps the newest bounded set", () => {
+  const markers = {
+    old: { ts: 1 },
+    newest: { ts: 3 },
+    middle: { ts: 2 },
+  };
+  assert.deepEqual(Object.keys(pruneThresholdMarkers(markers, { limit: 2 })).sort(), ["middle", "newest"]);
 });
