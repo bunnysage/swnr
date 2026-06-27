@@ -150,6 +150,15 @@ export default class SWNWeapon extends SWNBaseGearItem {
     if (game.settings.get("swnr", "useAWNGearCondition")) {
       gearCondition = this.condition;
     } 
+    // Derived combat bonuses granted by the actor's features (foci/edges).
+    // Damage pulls the weapon-appropriate bucket; shock is added unconditionally.
+    // The "attack" bucket is computed on the actor but intentionally not wired
+    // into the to-hit roll yet — deferred until a to-hit focus needs it.
+    const calculatedBonuses = actor.system?.calculatedBonuses || {};
+    const featureDamage = Number(
+      this.isMelee ? calculatedBonuses.meleeDamage : calculatedBonuses.rangedDamage
+    ) || 0;
+    const featureShock = Number(calculatedBonuses.shock) || 0;
     const rollData = {
       actor: actor.getRollData(),
       weapon: this,
@@ -158,6 +167,8 @@ export default class SWNWeapon extends SWNBaseGearItem {
       burstFire,
       modifier,
       damageBonus,
+      featureDamage,
+      featureShock,
       effectiveSkillRank: skillMod < 0 ? -2 : skillMod,
       attackRollDie,
     };
@@ -192,9 +203,9 @@ export default class SWNWeapon extends SWNBaseGearItem {
 
     const rollArray = [hitRoll];
 
-    const damageExplainTip = "roll +burst +statBonus +dmgBonus";
+    const damageExplainTip = "roll +burst +statBonus +dmgBonus +featureBonus";
     damageRoll = new Roll(
-      this.damage + " + @burstFire + @stat + @damageBonus",
+      this.damage + " + @burstFire + @stat + @damageBonus + @featureDamage",
       rollData
     );
 
@@ -257,8 +268,9 @@ export default class SWNWeapon extends SWNBaseGearItem {
       if (this.shock && this.shock.dmg != null && this.shock.dmg != "" && this.shock.dmg != "0") {
         shock_content = `Shock Damage  AC ${this.shock.ac}`;
         let _shockRoll = new Roll(
-          this.shock.dmg + " + @stat " +
-          (this.skillBoostsShock ? ` + ${damageBonus}` : ""),
+          this.shock.dmg + " + @stat" +
+          (this.skillBoostsShock ? ` + ${damageBonus}` : "") +
+          " + @featureShock",
           rollData
         );
         _shockRoll = this.safeDamageRoll(_shockRoll); 

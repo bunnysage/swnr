@@ -128,6 +128,9 @@ export default class SWNNPC extends SWNActorBase {
 
     // Calculate resource pools from Features/Foci/Edges
     this._calculateResourcePools();
+
+    // Calculate combat bonuses from Features/Foci/Edges
+    this._calculateBonuses();
   }
 
   /**

@@ -303,6 +303,9 @@ export default class SWNCharacter extends SWNActorBase {
     
     // Calculate resource pools from Features/Foci/Edges
     this._calculateResourcePools();
+
+    // Calculate combat bonuses from Features/Foci/Edges
+    this._calculateBonuses();
   }
 
   getRollData() {
@@ -317,6 +320,7 @@ export default class SWNCharacter extends SWNActorBase {
     }
 
     data["lvl"] = this.level.value;
+    data["level"] = this.level.value; // alias so @level resolves like poolsGranted formulas
     data["HD"] = this.hitDie?.value || 0;
     return data;
   }
@@ -465,6 +469,9 @@ export default class SWNCharacter extends SWNActorBase {
 
     // Calculate resource pools from Features/Foci/Edges
     this._calculateResourcePools();
+
+    // Calculate combat bonuses from Features/Foci/Edges
+    this._calculateBonuses();
 
     return;
   }

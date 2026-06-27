@@ -1,4 +1,5 @@
 import SWNShared from '../shared.mjs';
+import { aggregateFeatureBonuses, createEmptyFeatureBonuses } from '../../helpers/feature-bonuses.mjs';
 
 export default class SWNActorBase extends foundry.abstract
   .TypeDataModel {
@@ -31,6 +32,11 @@ export default class SWNActorBase extends foundry.abstract
     schema.effortCommitments = new fields.ObjectField({
       /* Dynamic keys: "${resourceName}:${subResource}" */
       /* Values: array of { powerId, powerName, amount, duration } */
+    });
+
+    schema.calculatedBonuses = new fields.ObjectField({
+      /* Derived from features' bonusesGranted during data prep. */
+      /* { meleeDamage, rangedDamage, shock, attack } */
     });
 
     schema.credits = new fields.SchemaField({
@@ -212,6 +218,88 @@ export default class SWNActorBase extends foundry.abstract
     }
 
     return pools;
+  }
+
+  /**
+   * Bonus Helper: sum feature `bonusesGranted` into derived combat bonuses.
+   * Gathers feature items, then delegates routing/condition logic to the pure
+   * `aggregateFeatureBonuses` helper. Foundry-bound concerns (item access,
+   * formula evaluation) stay here; the math is unit tested in isolation.
+   *
+   * Options:
+   * - parent: Actor document (required)
+   * - evaluateCondition: function(string) => boolean
+   * - evaluateFormula: function(string) => number
+   *
+   * @returns {{ meleeDamage: number, rangedDamage: number, shock: number, attack: number }}
+   */
+  calculateBonusesFromFeatures(options) {
+    const {
+      parent,
+      evaluateCondition = () => true,
+      evaluateFormula = () => 0,
+    } = options || {};
+
+    if (!parent) return createEmptyFeatureBonuses();
+
+    const entries = [];
+    for (const item of parent.items) {
+      if (item.type === "feature"
+        && Array.isArray(item.system.bonusesGranted)
+        && item.system.bonusesGranted.length > 0) {
+        entries.push(...item.system.bonusesGranted);
+      }
+    }
+
+    return aggregateFeatureBonuses(entries, { evaluateFormula, evaluateCondition });
+  }
+
+  /**
+   * Evaluate a bonus formula through Foundry's Roll so dice-style math functions
+   * (ceil/floor) and roll-data references (@lvl, @str.mod) resolve. Guarded so a
+   * malformed formula degrades to 0 rather than breaking data prep.
+   *
+   * @param {string} formula
+   * @param {object} rollData - typically this.getRollData()
+   * @returns {number}
+   * @private
+   */
+  _evaluateBonusFormula(formula, rollData) {
+    // Skip the Roll build for empty / default-sentinel formulas.
+    if (formula === undefined || formula === null || formula === "" || formula === "0") return 0;
+    try {
+      const roll = new Roll(String(formula), rollData || {});
+      roll.evaluateSync({ strict: false });
+      // Bonuses feed derived data, which re-prepares constantly; a dice term
+      // would re-roll on every prep and drift. Reject non-deterministic formulas.
+      if (roll.dice.length > 0) {
+        console.warn(`[SWN Bonus] Ignoring non-deterministic dice formula "${formula}"`);
+        return 0;
+      }
+      return Number(roll.total) || 0;
+    } catch (err) {
+      console.warn(`[SWN Bonus] Failed to evaluate formula "${formula}":`, err);
+      return 0;
+    }
+  }
+
+  /**
+   * Calculate derived combat bonuses (damage/shock/attack) from Features.
+   * Shared by Character and NPC — getRollData() and _evaluateCondition()
+   * resolve to each subclass's implementation via `this`.
+   *
+   * Note: bonus formulas are evaluated via Roll (so ceil/floor and @refs work),
+   * unlike pool formulas which use each subclass's regex-based _evaluateFormula.
+   * The divergence is intentional (see KTD3 in the foci-damage-bonuses plan).
+   * @private
+   */
+  _calculateBonuses() {
+    const rollData = this.getRollData();
+    this.calculatedBonuses = this.calculateBonusesFromFeatures({
+      parent: this.parent,
+      evaluateCondition: (cond) => this._evaluateCondition(cond),
+      evaluateFormula: (formula) => this._evaluateBonusFormula(formula, rollData),
+    });
   }
 
 

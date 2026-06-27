@@ -60,6 +60,42 @@ export default class SWNFeature extends SWNItemBase {
       })
     }), { initial: [] });
 
+    /**
+     * Combat-bonus configuration for features that add to damage/shock/attack.
+     *
+     * `formula` and `condition` use DIFFERENT evaluation engines, so their
+     * variable dialects differ:
+     *   - formula  -> Foundry Roll against the actor's getRollData(): supports
+     *                 math functions and `@lvl` / `@level` / `@str.mod`, etc.
+     *   - condition -> the shared poolsGranted condition engine: `@level`,
+     *                 `@stats.str.mod` (NOT `@lvl`).
+     * The evaluated value is summed into `actor.system.calculatedBonuses` during
+     * data prep; the weapon roll folds the relevant bucket into damage and shock.
+     *
+     * Example (WWN Warrior "Killing Blow"):
+     *   { target: "allDamage", formula: "ceil(@lvl/2)", appliesToShock: true }
+     */
+    schema.bonusesGranted = new fields.ArrayField(new fields.SchemaField({
+      // Which roll bucket this bonus feeds. "allDamage" fans out to both melee
+      // and ranged damage.
+      target: new fields.StringField({
+        choices: CONFIG.SWN.featureBonusTargets,
+        initial: "allDamage"
+      }),
+      // Roll formula for the bonus value (e.g., "ceil(@lvl/2)", "@str.mod", "1").
+      formula: new fields.StringField({
+        initial: "0"
+      }),
+      // When true, the value is ALSO added to shock (no-op if target is "shock").
+      appliesToShock: new fields.BooleanField({
+        initial: false
+      }),
+      // Optional condition gate (poolsGranted dialect, e.g. "@level >= 3").
+      condition: new fields.StringField({
+        initial: ""
+      })
+    }), { initial: [] });
+
     return schema;
   }
 }

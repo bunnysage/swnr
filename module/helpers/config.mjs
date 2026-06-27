@@ -110,6 +110,10 @@ SWN.poolResourceNames = ["Effort", "Slots", "Points", "Strain", "Uses"];
 
 SWN.poolCadences = ["commit", "scene", "day"];
 
+// Targets a feature's bonusesGranted entry can feed. "allDamage" is a routing
+// alias that fans out to both meleeDamage and rangedDamage.
+SWN.featureBonusTargets = ["allDamage", "meleeDamage", "rangedDamage", "shock", "attack"];
+
 SWN.powerSubTypes = ["psychic", "art", "adept", "spell", "mutation"];
 
 SWN.consumptionTypes = {
