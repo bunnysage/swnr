@@ -14,6 +14,11 @@ system:
   level: 1
   type: focus
   poolsGranted: []
+  bonusesGranted:
+    - target: allDamage
+      formula: ceil(@lvl/2)
+      appliesToShock: true
+      condition: ''
 _id: m5rc26tm0xa3e9ht
 _stats:
   compendiumSource: null
