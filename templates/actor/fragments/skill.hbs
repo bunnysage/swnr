@@ -7,7 +7,20 @@
     </div>
   </a>
 
+  {{#if item.system.specialties.available.length}}
+  <div class="skill-specialties">
+    {{#each item.system.specialties.known as |fam|}}
+    <span class="specialty-chip">{{fam}}</span>
+    {{/each}}
+  </div>
+  {{/if}}
+
   <div class="item-controls">
+    {{#if item.system.specialties.available.length}}
+    <a class='item-control manage-specialties' title='Manage specialties' data-action='manageSpecialties'>
+      <i class='fas fa-tags'></i>
+    </a>
+    {{/if}}
     <a class='item-control item-edit' title='{{localize "DOCUMENT.Update" type=' Item'}}' data-action='viewDoc'>
       <i class='fas fa-edit'></i>
     </a>

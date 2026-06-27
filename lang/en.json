@@ -1488,12 +1488,95 @@
           "text": "Master the arts of physical translocation of yourself and allies."
         }
       },
+      "banshee": {
+        "athletics": {
+          "name": "Athletics",
+          "text": "Apply trained speed, strength, or stamina in some feat of physical exertion. Roll it to run, jump, lift, swim, climb, throw, and so forth. You can use it as a combat skill when throwing things, though it doesn’t qualify as a combat skill for other ends."
+        },
+        "brawling": {
+          "name": "Brawling",
+          "text": "Use it as a combat skill when fighting unarmed or with natural weapons. If your PC means to make a habit of this rather than as a recourse of desperation, you should take the Unarmed Combatant focus."
+        },
+        "bureaucracy": {
+          "name": "Bureaucracy",
+          "text": "Manage an organization, handle paperwork, analyze records, and keep an institution functioning on a daily basis. Roll it for bureaucratic expertise, organizational management, legal knowledge, dealing with government agencies, and understanding how institutions really work."
+        },
+        "commerce": {
+          "name": "Commerce",
+          "text": "Find what you need on the market and sell what you have. Roll it to sell or buy things, figure out where to purchase hard-to-get or illicit goods, deal with customs agents, or run a business."
+        },
+        "computer": {
+          "name": "Computer",
+          "text": "Operate or hack computing and communications hardware. Roll it to program or hack computers, control computer-operated hardware, operate communications tech, or decrypt things."
+        },
+        "contacts": {
+          "name": "Contacts",
+          "text": "Find people who can be helpful to your purposes and get them to cooperate with you. Roll it to make useful connections, find people you know, know where to get illicit goods and services, and be familiar with foreign cultures and languages. You can use it in place of Persuade for people you find via this skill."
+        },
+        "knowledge": {
+          "name": "Knowledge",
+          "text": "Know facts about academic or scientific fields. Roll it to understand planetary ecologies, remember relevant history, solve science mysteries, and know the basic facts about rare or esoteric topics."
+        },
+        "leadership": {
+          "name": "Leadership",
+          "text": "Convince others to also do whatever it is you’re trying to do. Persuade might convince them that following you is smart, but Leadership can make them do it even when they think it’s a bad idea. Roll it to lead troops in combat, convince others to follow you, or maintain morale and discipline."
+        },
+        "marksmanship": {
+          "name": "Marksmanship",
+          "text": "Use it as a combat skill when using ranged weaponry, whether hurled rocks, bows, laser pistols, combat rifles, or ship’s gunnery. Specialty families (house rule): Sidearms, Longarms, Heavy, Energy Weapons, and Primitive Ranged (bows). You know (skill rank + 1) families; firing outside them takes a -2 unfamiliar penalty, and rank 4 covers all of them."
+        },
+        "medicine": {
+          "name": "Medicine",
+          "text": "Employ medical and psychological treatment for the injured or disturbed. Roll it to cure diseases, stabilize the critically injured, treat psychological disorders, or diagnose illnesses."
+        },
+        "melee": {
+          "name": "Melee",
+          "text": "Use it as a combat skill when wielding melee weapons, whether primitive or complex. Specialty families (house rule): Blades, Bludgeons, Polearms & Spears, Flexible, and Improvised & Exotic. You know (skill rank + 1) families; fighting outside them takes a -2 unfamiliar penalty, and rank 4 covers all of them."
+        },
+        "perception": {
+          "name": "Perception",
+          "text": "Spot anomalies or interesting facts about your environment. Roll it for searching places, detecting ambushes, spotting things, and reading the emotional state of other people."
+        },
+        "perform": {
+          "name": "Perform",
+          "text": "Exhibit some performative skill. Roll it to dance, sing, orate, act, or otherwise put on a convincing or emotionally moving performance."
+        },
+        "persuade": {
+          "name": "Persuade",
+          "text": "Convince other people of the facts you want them to believe. What they do with that conviction may not be completely predictable. Roll it to persuade, charm, intimidate, or deceive others in conversation."
+        },
+        "pilot": {
+          "name": "Pilot",
+          "text": "Use this skill to pilot vehicles or ride beasts. Roll it to fly spaceships, drive vehicles, ride animals, or tend to basic vehicle repair. This skill doesn’t help you with things entirely outside the scope of your background or experience, though with some practice a PC can expand their expertise."
+        },
+        "profession": {
+          "name": "Profession",
+          "text": "This is a catch-all skill for professions not represented by other skills. Roll it to work at a particular profession, art, or trade."
+        },
+        "security": {
+          "name": "Security",
+          "text": "Defeat the defenses of a site. Roll it to pick locks, defeat alarms and traps, case a location, counter surveillance, and bypass physical access control. Electronic locks, cameras, and intrusion software still lean on Computer or Tech to disable; Security is the planning, the physical bypass, and knowing what to look for."
+        },
+        "stealth": {
+          "name": "Stealth",
+          "text": "Move without drawing notice. Roll it for stealth, disguise, infiltration, manual legerdemain, pickpocketing, and blending into a crowd."
+        },
+        "survival": {
+          "name": "Survival",
+          "text": "Obtain the basics of food, water, and shelter in hostile environments, along with avoiding their natural perils. Roll it to handle animals, navigate difficult terrain, scrounge urban resources, make basic tools, and avoid wild beasts or gangs."
+        },
+        "tech": {
+          "name": "Tech",
+          "text": "Create and repair devices both simple and complex. Roll it to fix things, build things, and identify what something is supposed to do. Specialty families (house rule): Postech, Pretech, Astronautic, Maltech, and Psitech. You know (skill rank + 1) families; working outside them takes a -2 unfamiliar penalty, and rank 4 covers all of them. Pretech requires a Knowledge check (10+) to understand a device before Tech can safely work it."
+        }
+      },
       "original": {},
       "labels": {
         "spaceMagic": "Space Magic",
         "classic": "Classic",
         "revised": "Revised",
         "cwn": "CWN",
+        "banshee": "Banshee",
         "psionic": "Psionic"
       }
     },

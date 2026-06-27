@@ -46,6 +46,14 @@ export default class SWNSkill extends SWNItemBase {
     
     schema.stats = SWNShared.stringChoices("dex", CONFIG.SWN.stats);
 
+    // Specialty families (Banshee house rule). `available` is the menu intrinsic to the
+    // skill (only populated for Banshee Marksmanship/Melee/Tech at creation); `known` is the
+    // character's freeform subset. Empty `available` means an ordinary skill: no UI, no rule.
+    schema.specialties = new fields.SchemaField({
+      available: new fields.ArrayField(new fields.StringField({ required: true, nullable: false })),
+      known: new fields.ArrayField(new fields.StringField({ required: true, nullable: false })),
+    });
+
     return schema;
   }
 

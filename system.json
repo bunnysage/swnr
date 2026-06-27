@@ -6,89 +6,147 @@
   "authors": [
     {
       "name": "wintersleepAI",
-      "discord": "wintersleep1832"
+      "discord": "wintersleep1832",
+      "flags": {}
     },
     {
-      "name": "SpiceKing"
+      "name": "SpiceKing",
+      "flags": {}
     },
     {
       "name": "Badgkat",
-      "discord": "badgkat"
+      "discord": "badgkat",
+      "flags": {}
     }
   ],
   "documentTypes": {
     "Actor": {
-        "character": {
-            "htmlFields": ["biography"]
-        },
-        "npc": {
-            "htmlFields": ["biography"]
-        },
-        "ship": {
-            "htmlFields": ["description", "mods"]
-        },
-        "mech": {
-            "htmlFields": ["description", "mods"]
-        },
-        "vehicle": {
-            "htmlFields": ["description", "mods"]
-        },
-        "drone": {
-            "htmlFields": ["description", "mods"]
-        },
-        "cyberdeck": {
-            "htmlFields": ["description"]
-        },
-        "faction": {
-            "htmlFields": ["description"]
-        }
+      "character": {
+        "htmlFields": [
+          "biography"
+        ]
+      },
+      "npc": {
+        "htmlFields": [
+          "biography"
+        ]
+      },
+      "ship": {
+        "htmlFields": [
+          "description",
+          "mods"
+        ]
+      },
+      "mech": {
+        "htmlFields": [
+          "description",
+          "mods"
+        ]
+      },
+      "vehicle": {
+        "htmlFields": [
+          "description",
+          "mods"
+        ]
+      },
+      "drone": {
+        "htmlFields": [
+          "description",
+          "mods"
+        ]
+      },
+      "cyberdeck": {
+        "htmlFields": [
+          "description"
+        ]
+      },
+      "faction": {
+        "htmlFields": [
+          "description"
+        ]
+      }
     },
     "Item": {
-        "feature": {
-            "htmlFields": ["description"]
-        },
-        "item": {
-            "htmlFields": ["description"]
-        },
-        "power": {
-            "htmlFields": ["description"]
-        },
-        "skill": {
-            "htmlFields": ["description"]
-        },
-        "weapon": {
-            "htmlFields": ["description"]
-        },
-        "armor": {
-            "htmlFields": ["description"]
-        },
-        "cyberware": {
-            "htmlFields": ["description"]
-        },
-        "asset": {
-            "htmlFields": ["description"]
-        },
-        "program": {
-            "htmlFields": ["description"]
-        },
-        "injury": {
-            "htmlFields": ["description"]
-        },
-        "shipWeapon": {
-            "htmlFields": ["description"]
-        },
-        "shipDefense": {
-            "htmlFields": ["description"]
-        },
-        "shipFitting": {
-            "htmlFields": ["description"]
-        }
+      "feature": {
+        "htmlFields": [
+          "description"
+        ]
+      },
+      "item": {
+        "htmlFields": [
+          "description"
+        ]
+      },
+      "power": {
+        "htmlFields": [
+          "description"
+        ]
+      },
+      "skill": {
+        "htmlFields": [
+          "description"
+        ]
+      },
+      "weapon": {
+        "htmlFields": [
+          "description"
+        ]
+      },
+      "armor": {
+        "htmlFields": [
+          "description"
+        ]
+      },
+      "cyberware": {
+        "htmlFields": [
+          "description"
+        ]
+      },
+      "asset": {
+        "htmlFields": [
+          "description"
+        ]
+      },
+      "program": {
+        "htmlFields": [
+          "description"
+        ]
+      },
+      "injury": {
+        "htmlFields": [
+          "description"
+        ]
+      },
+      "shipWeapon": {
+        "htmlFields": [
+          "description"
+        ]
+      },
+      "shipDefense": {
+        "htmlFields": [
+          "description"
+        ]
+      },
+      "shipFitting": {
+        "htmlFields": [
+          "description"
+        ]
+      }
     }
   },
   "flags": {
     "hotReload": {
-      "extensions": ["css", "html", "hbs", "json"],
-      "paths": ["css", "lang", "templates"]
+      "extensions": [
+        "css",
+        "html",
+        "hbs",
+        "json"
+      ],
+      "paths": [
+        "css",
+        "lang",
+        "templates"
+      ]
     }
   },
   "url": "https://github.com/wintersleepAI/swnr",
@@ -100,191 +158,302 @@
     {
       "type": "setup",
       "url": "systems/swnr/assets/art/GrzegorzPedrycz_HEGEMON.webp",
-      "thumbnail": "systems/swnr/assets/art/GrzegorzPedrycz_HEGEMON.webp"
+      "thumbnail": "systems/swnr/assets/art/GrzegorzPedrycz_HEGEMON.webp",
+      "loop": false,
+      "flags": {}
     }
   ],
   "compatibility": {
-    "minimum": "13.345",
+    "minimum": "13",
     "verified": "13.348"
   },
-  "esmodules": ["module/swnr.mjs"],
-  "styles": ["css/swnr.css"],
+  "esmodules": [
+    "module/swnr.mjs"
+  ],
+  "styles": [
+    {
+      "src": "css/swnr.css"
+    }
+  ],
   "languages": [
     {
       "lang": "en",
       "name": "English",
-      "path": "lang/en.json"
+      "path": "lang/en.json",
+      "flags": {}
     }
   ],
   "packs": [
-
     {
       "name": "cwn-actors",
       "label": "Cwn actors",
       "system": "swnr",
-      "type": "Actor"
+      "type": "Actor",
+      "path": "packs/cwn-actors",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      },
+      "flags": {}
     },
     {
       "name": "cwn-roll-tables",
       "label": "Cwn Roll Tables",
       "system": "swnr",
-      "type": "RollTable"},
+      "type": "RollTable",
+      "path": "packs/cwn-roll-tables",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      },
+      "flags": {}
+    },
     {
       "name": "cwn-journals",
       "label": "Cwn Journals",
       "system": "swnr",
-      "type": "JournalEntry"
+      "type": "JournalEntry",
+      "path": "packs/cwn-journals",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      },
+      "flags": {}
     },
     {
       "name": "cwn-items",
       "label": "Cwn Items",
       "system": "swnr",
-      "type": "Item"
+      "type": "Item",
+      "path": "packs/cwn-items",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      },
+      "flags": {}
     },
     {
       "name": "swn-items",
       "label": "SWN Items",
       "system": "swnr",
-      "type": "Item"
+      "type": "Item",
+      "path": "packs/swn-items",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      },
+      "flags": {}
     },
     {
       "name": "swn-actors",
       "label": "SWN Actors",
       "system": "swnr",
-      "type": "Actor"
+      "type": "Actor",
+      "path": "packs/swn-actors",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      },
+      "flags": {}
     },
     {
       "name": "swn-roll-tables",
       "label": "SWN Roll Tables",
       "system": "swnr",
-      "type": "RollTable"
+      "type": "RollTable",
+      "path": "packs/swn-roll-tables",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      },
+      "flags": {}
     },
     {
       "name": "swn-journals",
       "label": "SWN Journals",
       "system": "swnr",
-      "type": "JournalEntry"
+      "type": "JournalEntry",
+      "path": "packs/swn-journals",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      },
+      "flags": {}
     },
     {
       "name": "wwn-roll-tables",
       "label": "WWN Roll Tables",
       "type": "RollTable",
-      "system": "swnr"
+      "system": "swnr",
+      "path": "packs/wwn-roll-tables",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      },
+      "flags": {}
     },
     {
       "name": "wwn-journals",
       "label": "WWN Journals",
       "type": "JournalEntry",
-      "system": "swnr"
-    },        
+      "system": "swnr",
+      "path": "packs/wwn-journals",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      },
+      "flags": {}
+    },
     {
       "name": "wwn-items",
       "label": "WWN Items",
       "type": "Item",
-      "system": "swnr"
+      "system": "swnr",
+      "path": "packs/wwn-items",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      },
+      "flags": {}
     },
     {
       "name": "wwn-actors",
       "label": "WWN Actors",
       "type": "Actor",
-      "system": "swnr"
+      "system": "swnr",
+      "path": "packs/wwn-actors",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      },
+      "flags": {}
     },
     {
       "name": "awn-actors",
       "label": "AWN Actors",
       "type": "Actor",
-      "system": "swnr"
+      "system": "swnr",
+      "path": "packs/awn-actors",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      },
+      "flags": {}
     },
     {
       "name": "awn-journals",
       "label": "AWN Journals",
       "type": "JournalEntry",
-      "system": "swnr"
+      "system": "swnr",
+      "path": "packs/awn-journals",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      },
+      "flags": {}
     },
     {
       "name": "awn-items",
       "label": "AWN Items",
       "type": "Item",
-      "system": "swnr"
+      "system": "swnr",
+      "path": "packs/awn-items",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      },
+      "flags": {}
     },
     {
       "name": "awn-roll-tables",
       "label": "AWN Roll Tabels",
       "system": "swnr",
-      "type": "RollTable"
+      "type": "RollTable",
+      "path": "packs/awn-roll-tables",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      },
+      "flags": {}
     },
     {
       "name": "swnr-documentation",
       "label": "SWNR Documentation",
       "system": "swnr",
       "type": "JournalEntry",
-			"private": false,
-			"flags": {}
+      "flags": {},
+      "path": "packs/swnr-documentation",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      }
     }
   ],
   "packFolders": [
     {
       "name": "WWN",
       "sorting": "a",
-      "color": "#FF9900",
+      "color": "#ff9900",
       "packs": [
         "wwn-actors",
         "wwn-items",
         "wwn-roll-tables",
         "wwn-journals"
-      ]
+      ],
+      "folders": []
     },
     {
       "name": "SWN",
       "sorting": "a",
-      "color": "#FF6600",
+      "color": "#ff6600",
       "packs": [
         "swn-actors",
         "swn-items",
         "swn-roll-tables",
         "swn-journals"
-      ]
+      ],
+      "folders": []
     },
     {
       "name": "CWN",
       "sorting": "a",
-      "color": "#00FF00",
+      "color": "#00ff00",
       "packs": [
         "cwn-actors",
         "cwn-items",
         "cwn-roll-tables",
         "cwn-journals"
-      ] 
+      ],
+      "folders": []
     },
     {
       "name": "AWN",
       "sorting": "a",
-      "color": "#FFCC00",
+      "color": "#ffcc00",
       "packs": [
         "awn-items",
         "awn-roll-tables",
         "awn-actors",
         "awn-journals"
-      ]
+      ],
+      "folders": []
     },
     {
       "name": "SWNR System",
       "sorting": "a",
-      "color": "#2E3B4E",
+      "color": "#2e3b4e",
       "packs": [
         "swnr-documentation"
-      ]
+      ],
+      "folders": []
     }
   ],
-  "socket": false,
-  "manifest": "https://github.com/wintersleepAI/swnr/releases/latest/download/system.json", 
-  "download": "",
+  "manifest": "https://github.com/wintersleepAI/swnr/releases/latest/download/system.json",
+  "download": "https://github.com/wintersleepAI/swnr/releases/download/v2.3.0/swnr-2.3.0.zip",
   "background": "systems/swnr/assets/art/GrzegorzPedrycz_HEGEMON.webp",
   "grid": {
-    "type": 1,
     "distance": 5,
-    "units": "ft",
-    "diagonals": 0
+    "units": "ft"
   },
   "primaryTokenAttribute": "health",
   "secondaryTokenAttribute": "power"

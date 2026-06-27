@@ -1622,6 +1622,27 @@
 .swnr .skill-list .trained {
   color: var(--swnr-c-dark);
 }
+.swnr .skill-specialties {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  flex: 1 1 auto;
+  justify-content: flex-end;
+  margin: 0 4px;
+}
+.swnr .skill-specialties .specialty-chip {
+  font-size: 10px;
+  line-height: 1;
+  padding: 2px 5px;
+  border: 1px solid var(--swnr-c-faint);
+  border-radius: 8px;
+  color: var(--swnr-c-dark);
+  white-space: nowrap;
+}
+.swnr .item-control.manage-specialties {
+  cursor: pointer;
+}
 .swnr .asset-prop {
   font-size: 12px;
   text-align: center;

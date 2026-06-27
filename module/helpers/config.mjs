@@ -1,3 +1,5 @@
+import { SKILL_SPECIALTY_FAMILIES } from './skill-specialties.mjs';
+
 export const SWN = {};
 
 /**
@@ -345,6 +347,28 @@ SWN.skills = {
     "trade",
     "work",
   ],
+  banshee: [
+    "athletics",
+    "brawling",
+    "bureaucracy",
+    "commerce",
+    "computer",
+    "contacts",
+    "knowledge",
+    "leadership",
+    "marksmanship",
+    "medicine",
+    "melee",
+    "perception",
+    "perform",
+    "persuade",
+    "pilot",
+    "profession",
+    "security",
+    "stealth",
+    "survival",
+    "tech",
+  ],
   psionic: [
     "biopsionics",
     "metapsionics",
@@ -354,6 +378,9 @@ SWN.skills = {
     "teleportation",
   ],
 };
+
+// Specialty families per skill key (Banshee house rule). See skill-specialties.mjs.
+SWN.skillSpecialties = SKILL_SPECIALTY_FAMILIES;
 
 SWN.assetCategories = {
   force: 'swnr.sheet.faction.assetCategories.force',

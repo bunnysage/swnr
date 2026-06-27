@@ -1,3 +1,5 @@
+import { getAvailableSpecialties } from './skill-specialties.mjs';
+
 export function getDefaultImage(itemType) {
   const icon_path = "systems/swnr/assets/icons/game-icons.net/item-icons";
   const imgMap = {
@@ -122,6 +124,10 @@ export function initSkills(actor, skillSet) {
         description: game.i18n.localize(skillRoot + "text"),
         source: game.i18n.localize("swnr.skills.labels." + skillSet),
         dice: "2d6",
+        specialties: {
+          available: getAvailableSpecialties(element),
+          known: [],
+        },
       },
     };
   });

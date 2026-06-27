@@ -65,6 +65,7 @@ export class SWNActorSheet extends SWNBaseSheet {
       addLanguage: this._onAddLanguage,
       removeLanguage: this._onRemoveLanguage,
       toggleLanguageAdd: this._onToggleLanguageAdd,
+      manageSpecialties: this._onManageSpecialties,
       stressRoll: this._onStressRoll,
       modStress: this._onModStress,
     },
@@ -1723,6 +1724,55 @@ export class SWNActorSheet extends SWNBaseSheet {
         }
       }
     }
+  }
+
+  /**
+   * Manage a skill's known specialty families (Banshee house rule).
+   * Opens a dialog of the skill's available families as checkboxes and writes the checked
+   * set back to the skill Item. Freeform: any subset allowed, no cap, no skill-point cost.
+   * @param {Event} event - The originating click event
+   * @param {HTMLElement} target - The clicked element
+   * @private
+   */
+  static async _onManageSpecialties(event, target) {
+    event.preventDefault();
+    const skillID = target.closest('[data-item-id]')?.dataset.itemId;
+    const skill = this.actor.items.get(skillID);
+    if (!skill) return;
+
+    const available = skill.system.specialties?.available ?? [];
+    if (!available.length) {
+      ui.notifications?.warn("This skill has no specialty families.");
+      return;
+    }
+    const known = new Set(skill.system.specialties?.known ?? []);
+    const esc = (s) =>
+      String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+    const rows = available
+      .map(
+        (fam, i) =>
+          `<div class="form-group"><label class="checkbox"><input type="checkbox" name="fam-${i}" ${known.has(fam) ? "checked" : ""}/> ${esc(fam)}</label></div>`
+      )
+      .join("");
+    const content = `<form><p>Known specialty families for <strong>${esc(skill.name)}</strong>:</p>${rows}</form>`;
+
+    await foundry.applications.api.DialogV2.prompt({
+      window: { title: `Specialties: ${skill.name}` },
+      modal: true,
+      rejectClose: false,
+      content,
+      ok: {
+        label: "Save",
+        callback: async (_event, button) => {
+          const form = button.form;
+          const selected = available.filter(
+            (_fam, i) => form.elements[`fam-${i}`]?.checked
+          );
+          await skill.update({ "system.specialties.known": selected });
+        },
+      },
+    });
   }
 
   static async _onStressRoll(event, _target) {
