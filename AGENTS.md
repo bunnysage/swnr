@@ -57,3 +57,9 @@ await actor.updateEmbeddedDocuments('Item', payload);
   - Utilities: `src/scss/utils/*.scss`
 - After SCSS changes, run `npm run build` to compile CSS.
 - For development, use `npm run watch` for auto-compilation.
+
+## Git & Pull Requests
+- This repo is a **fork**: `bunnysage/swnr`, forked from `wintersleepAI/swnr`.
+- **Never open pull requests against the `wintersleepAI/swnr` upstream.** All PRs stay inside the fork — base `dev` on `bunnysage/swnr`, head the feature branch.
+- `gh` resolves a fork clone's default repo to the parent. The default repo is pinned to `bunnysage/swnr`, but still pass `--repo bunnysage/swnr --base dev` explicitly on `gh pr create` / `gh pr list`.
+- Commit and push as the `bunnysage` identity.
