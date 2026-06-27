@@ -1740,6 +1740,27 @@
   color: var(--accent-color);
   text-decoration: underline;
 }
+.swnr .injury-list .item,
+.swnr .injury-list .items-header {
+  align-items: center;
+  gap: 4px;
+}
+.swnr .injury-list .item-name-long {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.swnr .injury-list .item-formula {
+  flex: 0 1 auto;
+  min-width: 0;
+  padding: 0 4px;
+  white-space: nowrap;
+}
+.swnr .injury-list .item-controls {
+  flex: 0 0 auto;
+}
 .swnr .effects-header {
   height: 28px;
   margin: 2px 0;

@@ -398,10 +398,40 @@
     text-decoration: none;
     color: inherit;
     transition: color 0.2s ease;
-    
+
     &:hover {
       color: var(--accent-color);
       text-decoration: underline;
     }
+  }
+}
+
+// Injury list sits in the narrow actor-sheet sidebar, where the shared
+// item-list columns (fixed 120px .item-formula) can't fit beside the name and
+// overlap. Scope the columns here so they line up and shrink gracefully.
+.injury-list {
+  .item,
+  .items-header {
+    align-items: center;
+    gap: 4px;
+  }
+
+  .item-name-long {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .item-formula {
+    flex: 0 1 auto;
+    min-width: 0;
+    padding: 0 4px;
+    white-space: nowrap;
+  }
+
+  .item-controls {
+    flex: 0 0 auto;
   }
 }
