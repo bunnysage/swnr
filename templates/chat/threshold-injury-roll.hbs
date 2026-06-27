@@ -1,7 +1,7 @@
 <div class="swnr chat-message injury-message threshold-injury-message">
   <div class="critical-hit-banner threshold-injury-banner">
     <i class="fas fa-notes-medical"></i>
-    {{localize 'swnr.chat.thresholdInjury'}}
+    {{injuryName}}
   </div>
 
   <div class="injury-type-indicator injury-type-{{severityBand.label}}">
@@ -19,11 +19,6 @@
   <div class="injury-location">
     <i class="fas fa-{{locationIcon}} location-icon"></i>
     <strong>{{localize 'swnr.injury.location'}}:</strong> {{location}}
-  </div>
-
-  <div class="effect-description">
-    <i class="fas fa-exclamation-triangle effect-icon"></i>
-    {{effectDescription}}
   </div>
 
 </div>

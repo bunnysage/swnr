@@ -1,15 +1,10 @@
 <div class="swnr chat-message injury-message">
   <div class="critical-hit-banner">
     <i class="fas fa-skull-crossbones"></i>
-    {{localize 'swnr.chat.criticalInjury'}}
+    {{injuryName}}
   </div>
 
   <div class="message-content">
-    <div class="injury-type-indicator injury-type-{{injuryType}}">
-      <strong>{{#if (eq injuryType 'minor')}}{{localize 'swnr.injury.minor'}}{{else}}{{localize 'swnr.injury.moderate'}}{{/if}}</strong>
-      <span class="hp-percentage">({{currentHp}}/{{maxHp}} {{localize 'swnr.injury.hp'}} - {{hpPercentage}}%)</span>
-    </div>
-
     <div class="injury-location">
       <i class="fas fa-{{locationIcon}} location-icon"></i>
       <strong>{{localize 'swnr.injury.location'}}:</strong> {{location}}
@@ -27,24 +22,5 @@
       </div>
     </div>
 
-    <div class="counters-update">
-      <table>
-        <tr>
-          <td><strong>{{localize 'swnr.injury.injuries'}}:</strong></td>
-          <td>{{injuryBefore}} &rarr; {{injuryAfter}}</td>
-        </tr>
-      </table>
-    </div>
-
-    {{#if effectDescription}}
-    <div class="effect-description">
-      <i class="fas fa-exclamation-triangle effect-icon"></i>
-      {{effectDescription}}
-    </div>
-    {{/if}}
-
-    <div class="actor-status">
-      <strong>{{actor.name}}</strong> {{localize 'swnr.injury.nowAt'}} {{currentHp}}/{{maxHp}} {{localize 'swnr.injury.hp'}}
-    </div>
   </div>
 </div>

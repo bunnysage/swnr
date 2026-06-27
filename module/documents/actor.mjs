@@ -170,41 +170,6 @@ export class SWNActor extends Actor {
   }
 
   /**
-   * Get effect description for an injury based on location and severity
-   * @param {string} location - Body part (arm, leg, torso, head)
-   * @param {string} side - Left/Right prefix for limbs
-   * @param {number} severity - Severity value
-   * @returns {string}
-   */
-  _getInjuryEffectDescription(location, side, severity) {
-    let effectDescription = "";
-    let duration = severity < 11 ? severity : "Until healed";
-
-    if (location === "arm") {
-      effectDescription = `${side}arm disabled for ${duration} days. Cannot hold items, drops anything held.`;
-    } else if (location === "leg") {
-      effectDescription = `${side}leg disabled for ${duration} days. Falls prone, movement halved.`;
-    } else if (location === "torso") {
-      effectDescription = `Blood Loss for ${duration} days. Max HP reduced by 1 per HD.`;
-    } else if (location === "head") {
-      effectDescription = `Concussed for ${duration} days. Acts last in initiative, INT check DC 12 to cast spells.`;
-    }
-
-    if (severity >= 11) {
-      effectDescription += " Character falls unconscious.";
-      if (severity < 16) {
-        effectDescription += " Physical save to avoid permanent injury.";
-      }
-    }
-
-    if (severity >= 16) {
-      effectDescription += " Catastrophic injury — permanent maiming or death (GM adjudicates).";
-    }
-
-    return effectDescription;
-  }
-
-  /**
    * Apply wounds from death & dismemberment system
    * @param {number} excessDamage - Damage that exceeded current HP
    */
@@ -229,12 +194,9 @@ export class SWNActor extends Actor {
     const injuriesAfter = injuries + 1;
     await this.update({ "system.injuries": injuriesAfter });
 
-    // Effect description: effect bucket = Mythras category, prefix = Mythras side
-    const effectDescription = this._getInjuryEffectDescription(category, side, severity);
-
     // Persist a durable injury Item (matches the threshold path)
     const severityBand = getThresholdSeverityBand(severity);
-    const itemName = `${severityBand.label.charAt(0).toUpperCase() + severityBand.label.slice(1)} Injury: ${location}`;
+    const itemName = `${location} Injury`;
     await this.createEmbeddedDocuments("Item", [{
       name: itemName,
       type: "injury",
@@ -242,11 +204,11 @@ export class SWNActor extends Actor {
         severity: severityBand.key,
         location: location,
         source: "Death & Dismemberment",
-        mechanicalEffect: effectDescription,
+        mechanicalEffect: "",
         persistent: severityBand.persistent,
         severityScore: severity,
         locationRoll: locationRollValue,
-        description: effectDescription,
+        description: "",
       },
     }]);
 
@@ -254,6 +216,7 @@ export class SWNActor extends Actor {
     const template = "systems/swnr/templates/chat/wound-roll.hbs";
     const chatData = {
       actor: this,
+      injuryName: itemName,
       location: location,
       locationIcon: locationIcon,
       locationDetails: details,
@@ -263,10 +226,7 @@ export class SWNActor extends Actor {
       injuryContribution: injuries * 2,
       excessDamage: excessDamage,
       critResistance: critResistance,
-      severity: severity,
-      injuryBefore: injuries,
-      injuryAfter: injuriesAfter,
-      effectDescription: effectDescription
+      severity: severity
     };
 
     const chatContent = await renderTemplate(template, chatData);
@@ -298,7 +258,6 @@ export class SWNActor extends Actor {
     // HP >= 50% = 1d6 (minor), HP < 50% = 1d8 (moderate)
     const isMinor = hpPercentage >= 0.5;
     const severityDie = isMinor ? "1d6" : "1d8";
-    const injuryType = isMinor ? "minor" : "moderate";
 
     // Calculate severity: severityDie + (injuries × 1) - critResistance
     const injuries = this.system.injuries || 0;
@@ -311,14 +270,14 @@ export class SWNActor extends Actor {
     const injuriesAfter = injuries + 1;
     await this.update({ "system.injuries": injuriesAfter });
 
-    // Generate effect description using helper
-    const effectDescription = this._getInjuryEffectDescription(location, side, severity);
+    const displayLocation = side + location.charAt(0).toUpperCase() + location.slice(1);
 
     // Create chat message
     const template = "systems/swnr/templates/chat/critical-injury.hbs";
     const chatData = {
       actor: this,
-      location: side + location.charAt(0).toUpperCase() + location.slice(1),
+      injuryName: `${displayLocation} Injury`,
+      location: displayLocation,
       locationIcon: locationIcon,
       locationRoll: locationRollValue,
       severityDie: severityDie,
@@ -326,14 +285,7 @@ export class SWNActor extends Actor {
       injuries: injuries,
       injuryContribution: injuries,  // Critical injuries use injuries × 1
       critResistance: critResistance,
-      severity: severity,
-      injuryType: injuryType,
-      hpPercentage: Math.round(hpPercentage * 100),
-      currentHp: this.system.health.value,
-      maxHp: this.system.health.max,
-      injuryBefore: injuries,
-      injuryAfter: injuriesAfter,
-      effectDescription: effectDescription
+      severity: severity
     };
 
     const chatContent = await renderTemplate(template, chatData);
@@ -357,12 +309,6 @@ export class SWNActor extends Actor {
     markers[key] = createThresholdMarker();
     await this.setFlag("swnr", "thresholdInjuryAttempts", markers);
     return true;
-  }
-
-  _getThresholdInjuryEffectDescription(location, side, bandLabel) {
-    const locationName = `${side}${location}`;
-    const band = bandLabel.charAt(0).toUpperCase() + bandLabel.slice(1);
-    return `${band} threshold injury affecting the ${locationName}. Apply table effects or GM adjudication appropriate to the wound.`;
   }
 
   _escapeHtml(value) {
@@ -481,7 +427,6 @@ export class SWNActor extends Actor {
     const severityBand = getThresholdSeverityBand(severityScore);
     const { location, locationIcon, side, locationRoll: locationRollValue } = await this._rollInjuryLocation();
     const displayLocation = side + location.charAt(0).toUpperCase() + location.slice(1);
-    const effectDescription = this._getThresholdInjuryEffectDescription(location, side, severityBand.label);
     const injuriesBefore = this.system.injuries || 0;
     const injuriesAfter = injuriesBefore + (severityBand.persistent ? 1 : 0);
 
@@ -489,7 +434,7 @@ export class SWNActor extends Actor {
     if (severityBand.persistent) updates["system.injuries"] = injuriesAfter;
     if (Object.keys(updates).length) await this.update(updates);
 
-    const itemName = `${severityBand.label.charAt(0).toUpperCase() + severityBand.label.slice(1)} Injury: ${displayLocation}`;
+    const itemName = `${displayLocation} Injury`;
     await this.createEmbeddedDocuments("Item", [{
       name: itemName,
       type: "injury",
@@ -497,11 +442,11 @@ export class SWNActor extends Actor {
         severity: severityBand.key,
         location: displayLocation,
         source: attack?.sourceItemSnapshot?.name || "Attack",
-        mechanicalEffect: effectDescription,
+        mechanicalEffect: "",
         persistent: severityBand.persistent,
         severityScore,
         locationRoll: locationRollValue,
-        description: effectDescription,
+        description: "",
       },
     }]);
 
@@ -513,6 +458,7 @@ export class SWNActor extends Actor {
     const template = "systems/swnr/templates/chat/threshold-injury-roll.hbs";
     const chatData = {
       actor: this,
+      injuryName: itemName,
       targetLabel: hiddenTarget ? game.i18n.localize("swnr.injury.hiddenTarget") : (targetToken?.name || this.name),
       weaponName: attack?.sourceItemSnapshot?.name || game.i18n.localize("swnr.injury.unknownSource"),
       location: displayLocation,
@@ -526,9 +472,6 @@ export class SWNActor extends Actor {
       defense,
       severityRoll: severityRoll.total,
       severityPressure,
-      injuriesBefore,
-      injuriesAfter,
-      effectDescription,
       config: CONFIG.SWN,
       user: game.user,
     };

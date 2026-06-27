@@ -1,7 +1,7 @@
 <div class="swnr chat-message injury-message">
   <div class="critical-hit-banner">
     <i class="fas fa-skull-crossbones"></i>
-    {{localize 'swnr.chat.criticalInjury'}}
+    {{injuryName}}
   </div>
 
   <div class="message-content">
@@ -22,24 +22,5 @@
       </div>
     </div>
 
-    <div class="counters-update">
-      <table>
-        <tr>
-          <td><strong>{{localize 'swnr.injury.injuries'}}:</strong></td>
-          <td>{{injuryBefore}} → {{injuryAfter}}</td>
-        </tr>
-      </table>
-    </div>
-
-    {{#if effectDescription}}
-    <div class="effect-description">
-      <i class="fas fa-exclamation-triangle effect-icon"></i>
-      {{effectDescription}}
-    </div>
-    {{/if}}
-
-    <div class="actor-status">
-      <strong>{{actor.name}}</strong> {{localize 'swnr.injury.nowAt'}} 0 {{localize 'swnr.injury.hp'}}
-    </div>
   </div>
-</div> 
+</div>

@@ -26,7 +26,7 @@
     </li>
     <li class="item-description" style="display: {{#if (lookup @root.expandedDescriptions item.id)}}block{{else}}none{{/if}}; background-color: var(--color-bg-option); border-left: 3px solid var(--accent-color); margin-left: 1em; padding: 0.5em;">
       <div class="item-description-content">
-        <strong>{{item.system.location}}</strong>: {{item.system.mechanicalEffect}}
+        <strong>{{item.system.location}}</strong>{{#if item.system.mechanicalEffect}}: {{item.system.mechanicalEffect}}{{/if}}
       </div>
     </li>
   {{/each}}
