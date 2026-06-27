@@ -1,0 +1,36 @@
+name: Mundane Alchemist
+type: feature
+sort: 0
+system:
+  description: >-
+    You've been trained at the laborious art of alchemy and are familiar with
+    its intricate subtleties. Level 1: Gain Alchemy-0 as a bonus skill. You have
+    formulae for all common lesser works, but you cannot yet devise greater
+    works, even if you get the formula for one. You can scavenge or jury-rig lab
+    equipment sufficient to create lesser works unless completely separated from
+    all adequate makeshifts. Level 2: You have formulae for all common greater
+    works and can compound them at the usual difficulty. A week of lab work and
+    access to common mundane materials lets you create your level x 25 silver
+    pieces worth of alchemical components for use in compounding your own
+    personal works.
+  favorite: false
+  level: 1
+  type: focus
+  poolsGranted: []
+_id: K4DajbOLQGGDorao
+_stats:
+  compendiumSource: null
+  duplicateSource: null
+  coreVersion: '13.346'
+  systemId: swnr
+  systemVersion: 2.1.0
+  createdTime: 1751000000000
+  modifiedTime: 1751000000000
+  lastModifiedBy: null
+  exportSource: null
+folder: XpfSdfJBDfjFSauP
+flags: {}
+effects: []
+ownership:
+  default: 0
+_key: '!items!K4DajbOLQGGDorao'

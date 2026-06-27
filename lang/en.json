@@ -1571,12 +1571,107 @@
         }
       },
       "original": {},
+      "wwn": {
+        "administer": {
+          "name": "Administer",
+          "text": "Keep an organization running smoothly, scribe and plan logistics, identify incompetent or treacherous workers, and analyze records and archives — the work of an executive or middle-manager."
+        },
+        "alchemy": {
+          "name": "Alchemy",
+          "text": "Brew, identify, and employ mundane alchemical works such as acids, fire bombs, toxins, and elixirs. Checks are normally Int/Alchemy. Gaining or raising Alchemy normally requires the Mundane Alchemist focus."
+        },
+        "connect": {
+          "name": "Connect",
+          "text": "Find or know people useful to your purposes, make friendships and acquaintances, know who to approach for favors or services, and call on the help or resources of organizations you belong to."
+        },
+        "convince": {
+          "name": "Convince",
+          "text": "Persuade a listener that something you are saying is true. The more implausible or emotionally repugnant the claim, the harder it is — and how they act on a newfound conviction is up to them."
+        },
+        "craft": {
+          "name": "Craft",
+          "text": "Craft or repair goods and technology appropriate to your background and society, across a wide range of artisan pursuits."
+        },
+        "exert": {
+          "name": "Exert",
+          "text": "Run, swim, climb, jump, labor for long periods, throw things, or otherwise apply physical strength, stamina, and coordination."
+        },
+        "heal": {
+          "name": "Heal",
+          "text": "Treat wounds, cure diseases, neutralize poisons, and tend to body and mind. Vital for stabilizing the Mortally Wounded, though it cannot restore lost hit points directly."
+        },
+        "know": {
+          "name": "Know",
+          "text": "Know matters of history, geography, natural science, and other academic fields appropriate to a sage or scholar."
+        },
+        "lead": {
+          "name": "Lead",
+          "text": "Inspire others to follow your lead and believe in your plans, keeping subordinates focused, loyal, and motivated in the face of danger or failure."
+        },
+        "magic": {
+          "name": "Magic",
+          "text": "Cast or analyze magic and know about famous mages and notable magical events. Classes that cannot cast spells gain only scholarly benefit from this skill."
+        },
+        "notice": {
+          "name": "Notice",
+          "text": "Notice small details, impending ambushes, hidden features, or concealed objects, and detect subtle sensory input. Keen attention can discern a subject's emotional state, but it cannot simply detect a lie."
+        },
+        "perform": {
+          "name": "Perform",
+          "text": "Sing, act, dance, orate, or otherwise perform for an audience, and compose music, plays, or other works of performance art."
+        },
+        "pray": {
+          "name": "Pray",
+          "text": "Perform the clerical rites of your religion; be familiar with the gods, demons, and taboos of major and minor faiths, and know the state of local faiths and their important figures."
+        },
+        "punch": {
+          "name": "Punch",
+          "text": "Fight unarmed or with natural body weaponry — punch, kick, grapple, or brawl. Reliably non-lethal, and inefficient without a supporting focus."
+        },
+        "ride": {
+          "name": "Ride",
+          "text": "Ride an animal, drive a cart or carriage, and otherwise handle land transportation, including mount care and basic cart repair."
+        },
+        "sail": {
+          "name": "Sail",
+          "text": "Sail or repair a ship, build small craft, navigate by the stars, read sea weather, and manage sailors — the business of a professional mariner."
+        },
+        "shoot": {
+          "name": "Shoot",
+          "text": "Use it as a combat skill when firing a bow or crossbow or throwing a hurled weapon. Maintain ranged weaponry and fletch arrows."
+        },
+        "sneak": {
+          "name": "Sneak",
+          "text": "Move silently, hide in shadows, shadow a target, avoid notice, and disguise yourself to blend in. This skill covers stealth and concealment; the deft-handed work of defeating security and thieving falls under Steal."
+        },
+        "stab": {
+          "name": "Stab",
+          "text": "Use it as a combat skill when fighting with melee weapons or throwing a hurled weapon. Maintain and identify weaponry."
+        },
+        "steal": {
+          "name": "Steal",
+          "text": "Pick locks, set or disable traps, pick pockets, palm objects, and perform sleight of hand to defeat security measures or relieve a mark of their belongings."
+        },
+        "survive": {
+          "name": "Survive",
+          "text": "Hunt, fish, navigate by the stars, mitigate environmental hazards, identify plants and wildlife, and craft basic survival tools and shelter."
+        },
+        "trade": {
+          "name": "Trade",
+          "text": "Buy and sell at a profit, appraise the worth of goods or treasures, deal with merchants and traders, find black-market goods, and know the laws on smuggling and contraband."
+        },
+        "work": {
+          "name": "Work",
+          "text": "A catch-all for any profession not otherwise covered by a skill — painter, lawyer, farmer, or herdsman — varying with your background."
+        }
+      },
       "labels": {
         "spaceMagic": "Space Magic",
         "classic": "Classic",
         "revised": "Revised",
         "cwn": "CWN",
         "banshee": "Banshee",
+        "wwn": "Worlds Without Number",
         "psionic": "Psionic"
       }
     },
