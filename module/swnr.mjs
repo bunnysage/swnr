@@ -13,6 +13,7 @@ import { SWN } from './helpers/config.mjs';
 import { registerSettings, addLanguagePreset } from './helpers/register-settings.mjs';
 import { registerHandlebarHelpers } from './helpers/handlebar.mjs';
 import { chatListeners, welcomeMessage } from './helpers/chat.mjs';
+import { resolveThresholdLocation, resolveMythrasLocation } from './helpers/injury-locations.mjs';
 import * as refreshHelpers from './helpers/refresh-helpers.mjs';
 import * as refreshOrchestrator from './helpers/refresh-orchestrator.mjs';
 
@@ -28,9 +29,38 @@ import * as migrations from './migration.mjs';
 /*  Init Hook                                   */
 /* -------------------------------------------- */
 
+/**
+ * Roll an injury hit location and post it to chat. Standalone GM tool used by
+ * the location macros; shares the pure tables in helpers/injury-locations.mjs
+ * with the actor injury paths so there is one source of truth.
+ * @param {"mythras"|"threshold"} kind
+ */
+async function rollInjuryLocation(kind = "mythras") {
+  if (kind !== "mythras" && kind !== "threshold") {
+    throw new Error(`swnr.rollInjuryLocation: unknown kind "${kind}"; expected "mythras" or "threshold".`);
+  }
+  if (kind === "threshold") {
+    const roll = await new Roll("1d12").roll();
+    const { location, needsSide } = resolveThresholdLocation(roll.total);
+    let side = "";
+    if (needsSide) {
+      const sideRoll = await new Roll("1d2").roll();
+      side = sideRoll.total === 1 ? "Left " : "Right ";
+    }
+    const label = `${side}${location.charAt(0).toUpperCase()}${location.slice(1)}`;
+    await roll.toMessage({ flavor: `Threshold Injury Location (1d12): <b>${label}</b>` });
+    return label;
+  }
+  const roll = await new Roll("1d20").roll();
+  const { location, details } = resolveMythrasLocation(roll.total);
+  await roll.toMessage({ flavor: `Death &amp; Dismemberment Location (1d20): <b>${location}</b> &mdash; ${details}` });
+  return location;
+}
+
 // Add key classes to the global scope so they can be more easily used
 // by downstream developers
 globalThis.swnr = {
+  rollInjuryLocation,
   documents: {
     SWNActor,
     SWNItem,

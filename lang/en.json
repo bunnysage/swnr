@@ -2402,7 +2402,6 @@
       "location": "Location",
       "severity": "Severity",
       "injuries": "Injuries",
-      "wounds": "Wounds",
       "edge": "Edge",
       "resistance": "Resistance",
       "thresholdDie": "Threshold die",

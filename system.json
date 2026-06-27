@@ -387,6 +387,18 @@
         "PLAYER": "OBSERVER",
         "ASSISTANT": "OWNER"
       }
+    },
+    {
+      "name": "swnr-macros",
+      "label": "SWNR Macros",
+      "system": "swnr",
+      "type": "Macro",
+      "path": "packs/swnr-macros",
+      "ownership": {
+        "PLAYER": "OBSERVER",
+        "ASSISTANT": "OWNER"
+      },
+      "flags": {}
     }
   ],
   "packFolders": [

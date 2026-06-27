@@ -1,0 +1,23 @@
+name: 'Roll Threshold Injury Location'
+type: script
+author: null
+img: icons/svg/d20-black.svg
+scope: global
+command: await swnr.rollInjuryLocation("threshold");
+folder: null
+sort: 0
+ownership:
+  default: 0
+flags: {}
+_stats:
+  compendiumSource: null
+  duplicateSource: null
+  coreVersion: '13.348'
+  systemId: swnr
+  systemVersion: 2.1.0
+  createdTime: null
+  modifiedTime: null
+  lastModifiedBy: null
+  exportSource: null
+_id: thrshldlocmacro1
+_key: '!macros!thrshldlocmacro1'

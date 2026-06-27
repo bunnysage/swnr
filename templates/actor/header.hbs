@@ -212,7 +212,7 @@
         </label>
       </div>
 
-      {{#if (eq actor.type 'character')}}
+      {{#if (or (eq actor.type 'character') (eq actor.type 'npc'))}}
         {{#if (eq gameSettings.useDeathAndDismemberment true)}}
         <div class="resource flex-group-center">
           <div class="field resource-content">
@@ -223,16 +223,8 @@
               data-dtype='Number'
               class='nested-field header'
             />
-            <span class="nested-sep">/</span>
-            <input
-              type='number'
-              name='system.wounds'
-              value='{{system.wounds}}'
-              data-dtype='Number'
-              class='nested-field header'
-            />
           </div>
-          <label class='resource-label'>Inj/Wnd</label>
+          <label class='resource-label'>{{localize 'swnr.injury.injuries'}}</label>
         </div>
         {{/if}}
       {{/if}}

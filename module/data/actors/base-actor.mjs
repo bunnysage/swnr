@@ -60,8 +60,7 @@ export default class SWNActorBase extends foundry.abstract
     schema.critResistance = SWNShared.requiredNumber(0);
     schema.injuryResistance = SWNShared.requiredNumber(0);
     schema.injuries = SWNShared.requiredNumber(0);
-    schema.wounds = SWNShared.requiredNumber(0);
-    
+
     return schema;
   }
 

@@ -10,6 +10,10 @@ import {
   normalizeNonNegativeInteger,
   pruneThresholdMarkers,
 } from "../helpers/injury-thresholds.mjs";
+import {
+  resolveThresholdLocation,
+  resolveMythrasLocation,
+} from "../helpers/injury-locations.mjs";
 
 /**
  * Extend the base Actor document by defining a custom roll data structure which is ideal for the Simple system.
@@ -134,57 +138,35 @@ export class SWNActor extends Actor {
   }
 
   /**
-   * Calculate wound and injury increases based on severity thresholds
-   * @param {number} severity - The calculated severity value
-   * @returns {{ injuryIncrease: number, woundIncrease: number }}
-   */
-  _calculateWoundThresholds(severity) {
-    let injuryIncrease = 1;
-    let woundIncrease = 0;
-
-    if (severity >= 11) {
-      woundIncrease = 1;
-    }
-    if (severity >= 16) {
-      woundIncrease += (severity - 15);
-    }
-
-    return { injuryIncrease, woundIncrease };
-  }
-
-  /**
-   * Roll for injury location (1d12)
+   * Roll for injury location (1d12 threshold table; above-zero paths).
    * @returns {Promise<{location: string, locationIcon: string, side: string, locationRoll: number}>}
    */
   async _rollInjuryLocation() {
     const locationRoll = new Roll("1d12");
     await locationRoll.roll();
-    const locationResult = locationRoll.total;
+    const { location, locationIcon, needsSide } = resolveThresholdLocation(locationRoll.total);
 
-    let location = "";
-    let locationIcon = "";
     let side = "";
-    if (locationResult <= 2) {
-      location = "arm";
-      locationIcon = "hand";
+    if (needsSide) {
       const sideRoll = new Roll("1d2");
       await sideRoll.roll();
       side = sideRoll.total === 1 ? "Left " : "Right ";
-    } else if (locationResult <= 4) {
-      location = "leg";
-      locationIcon = "person-walking";
-      const sideRoll = new Roll("1d2");
-      await sideRoll.roll();
-      side = sideRoll.total === 1 ? "Left " : "Right ";
-    } else if (locationResult <= 9) {
-      location = "torso";
-      locationIcon = "vest";
-    } else {
-      location = "head";
-      locationIcon = "head-side";
     }
 
-    return { location, locationIcon, side, locationRoll: locationResult };
+    return { location, locationIcon, side, locationRoll: locationRoll.total };
+  }
+
+  /**
+   * Roll for a Mythras 1d20 anatomical hit location (below-zero death & dismemberment).
+   * The result string already encodes the side; `category` maps it onto the
+   * arm/leg/torso/head effect buckets and `side` carries the prefix for effect text.
+   * @returns {Promise<{location: string, details: string, locationIcon: string, category: string, side: string, locationRoll: number}>}
+   */
+  async _rollMythrasLocation() {
+    const locationRoll = new Roll("1d20");
+    await locationRoll.roll();
+    const { location, details, locationIcon, category, side } = resolveMythrasLocation(locationRoll.total);
+    return { location, details, locationIcon, category, side, locationRoll: locationRoll.total };
   }
 
   /**
@@ -216,7 +198,7 @@ export class SWNActor extends Actor {
     }
 
     if (severity >= 16) {
-      effectDescription += ` Takes ${severity - 15} additional wounds.`;
+      effectDescription += " Catastrophic injury — permanent maiming or death (GM adjudicates).";
     }
 
     return effectDescription;
@@ -233,37 +215,48 @@ export class SWNActor extends Actor {
       return;
     }
 
-    // Roll for location (1d12)
-    const { location, locationIcon, side, locationRoll: locationRollValue } = await this._rollInjuryLocation();
+    // Roll Mythras 1d20 anatomical location (below-zero path)
+    const { location, locationIcon, side, category, details, locationRoll: locationRollValue } = await this._rollMythrasLocation();
 
-    // Calculate severity
+    // Calculate severity (math unchanged)
     const injuries = this.system.injuries || 0;
     const critResistance = this.system.critResistance || 0;
     const severityRoll = new Roll("1d12");
     await severityRoll.roll();
-    // Fix 4: Ensure severity is never negative
+    // Ensure severity is never negative
     const severity = Math.max(0, severityRoll.total + (injuries * 2) + excessDamage - critResistance);
 
-    // Store current values before updating
-    const woundsBefore = this.system.wounds || 0;
+    const injuriesAfter = injuries + 1;
+    await this.update({ "system.injuries": injuriesAfter });
 
-    // Calculate wound thresholds using helper method (Fix 8)
-    const { injuryIncrease, woundIncrease } = this._calculateWoundThresholds(severity);
+    // Effect description: effect bucket = Mythras category, prefix = Mythras side
+    const effectDescription = this._getInjuryEffectDescription(category, side, severity);
 
-    await this.update({
-      "system.injuries": injuries + injuryIncrease,
-      "system.wounds": woundsBefore + woundIncrease
-    });
-
-    // Generate effect description using helper
-    const effectDescription = this._getInjuryEffectDescription(location, side, severity);
+    // Persist a durable injury Item (matches the threshold path)
+    const severityBand = getThresholdSeverityBand(severity);
+    const itemName = `${severityBand.label.charAt(0).toUpperCase() + severityBand.label.slice(1)} Injury: ${location}`;
+    await this.createEmbeddedDocuments("Item", [{
+      name: itemName,
+      type: "injury",
+      system: {
+        severity: severityBand.key,
+        location: location,
+        source: "Death & Dismemberment",
+        mechanicalEffect: effectDescription,
+        persistent: severityBand.persistent,
+        severityScore: severity,
+        locationRoll: locationRollValue,
+        description: effectDescription,
+      },
+    }]);
 
     // Create chat message
     const template = "systems/swnr/templates/chat/wound-roll.hbs";
     const chatData = {
       actor: this,
-      location: side + location.charAt(0).toUpperCase() + location.slice(1),
+      location: location,
       locationIcon: locationIcon,
+      locationDetails: details,
       locationRoll: locationRollValue,
       severityRoll: severityRoll.total,
       injuries: injuries,
@@ -272,12 +265,10 @@ export class SWNActor extends Actor {
       critResistance: critResistance,
       severity: severity,
       injuryBefore: injuries,
-      injuryAfter: injuries + injuryIncrease,
-      woundBefore: woundsBefore,
-      woundAfter: woundsBefore + woundIncrease,
+      injuryAfter: injuriesAfter,
       effectDescription: effectDescription
     };
-    
+
     const chatContent = await renderTemplate(template, chatData);
     const rollMode = game.settings.get("core", "rollMode");
     const messageData = {
@@ -314,19 +305,11 @@ export class SWNActor extends Actor {
     const critResistance = this.system.critResistance || 0;
     const severityRoll = new Roll(severityDie);
     await severityRoll.roll();
-    // Fix 4: Ensure severity is never negative
+    // Ensure severity is never negative
     const severity = Math.max(0, severityRoll.total + injuries - critResistance);
 
-    // Store current values before updating
-    const woundsBefore = this.system.wounds || 0;
-
-    // Calculate wound thresholds using helper method (Fix 8)
-    const { injuryIncrease, woundIncrease } = this._calculateWoundThresholds(severity);
-
-    await this.update({
-      "system.injuries": injuries + injuryIncrease,
-      "system.wounds": woundsBefore + woundIncrease
-    });
+    const injuriesAfter = injuries + 1;
+    await this.update({ "system.injuries": injuriesAfter });
 
     // Generate effect description using helper
     const effectDescription = this._getInjuryEffectDescription(location, side, severity);
@@ -349,9 +332,7 @@ export class SWNActor extends Actor {
       currentHp: this.system.health.value,
       maxHp: this.system.health.max,
       injuryBefore: injuries,
-      injuryAfter: injuries + injuryIncrease,
-      woundBefore: woundsBefore,
-      woundAfter: woundsBefore + woundIncrease,
+      injuryAfter: injuriesAfter,
       effectDescription: effectDescription
     };
 
