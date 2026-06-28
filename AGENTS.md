@@ -60,6 +60,8 @@ await actor.updateEmbeddedDocuments('Item', payload);
 
 ## Git & Pull Requests
 - This repo is a **fork**: `bunnysage/swnr`, forked from `wintersleepAI/swnr`.
+- **The `origin` remote points at the `wintersleepAI/swnr` upstream — NEVER push there.** `bunnysage` doesn't have write access; `git push origin` (or `-u origin`) fails with a 403 and is always wrong.
+- **Always push to the `bunnysage` remote** (`https://github.com/bunnysage/swnr.git`): `git push bunnysage HEAD` (or `git push -u bunnysage HEAD` to set tracking). Verify with `git remote -v` if unsure — push only ever goes to the `bunnysage` fork remote.
 - **Never open pull requests against the `wintersleepAI/swnr` upstream.** All PRs stay inside the fork — base `dev` on `bunnysage/swnr`, head the feature branch.
 - `gh` resolves a fork clone's default repo to the parent. The default repo is pinned to `bunnysage/swnr`, but still pass `--repo bunnysage/swnr --base dev` explicitly on `gh pr create` / `gh pr list`.
 - Commit and push as the `bunnysage` identity.

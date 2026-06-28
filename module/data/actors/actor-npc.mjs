@@ -1,5 +1,6 @@
 import SWNActorBase from './base-actor.mjs';
 import SWNShared from '../shared.mjs';
+import { averageHitDie } from '../../helpers/averaged-hit-dice.mjs';
 
 export default class SWNNPC extends SWNActorBase {
   static LOCALIZATION_PREFIXES = [
@@ -341,6 +342,22 @@ export default class SWNNPC extends SWNActorBase {
     }
     //For debug: console.log(`Updating health using ${hitDice} hit die. Roll ${dieRoll} `);
 
+    // When the Averaged Hit Dice setting is on, split each hit die into two
+    // half-sized dice (3d8 -> 6d4). Flat HP values are untouched; unsupported
+    // dice fall through to the normal roll with a notification.
+    let averagedLabel = null;
+    if (game.settings.get("swnr", "useAveragedHitDice")) {
+      const averaged = averageHitDie(dieRoll);
+      if (averaged.status === "transformed") {
+        dieRoll = averaged.formula;
+        averagedLabel = averaged.label;
+      } else if (averaged.status === "unsupported") {
+        ui.notifications?.info(
+          `Averaged Hit Dice isn't set up for ${dieRoll}; rolling the normal hit dice.`
+        );
+      }
+    }
+
     const roll = new Roll(`${dieRoll}`);
     await roll.roll();
     if (roll != undefined && roll.total != undefined) {
@@ -349,6 +366,13 @@ export default class SWNNPC extends SWNActorBase {
         "system.health.max": newHealth,
         "system.health.value": newHealth,
       });
+      if (averagedLabel) {
+        getDocumentClass("ChatMessage").create({
+          speaker: ChatMessage.getSpeaker({ actor: this.parent }),
+          flavor: `Rolling HP with averaged hit dice: ${averagedLabel}. Got ${newHealth}.`,
+          rolls: [roll],
+        });
+      }
     }
   }
 

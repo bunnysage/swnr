@@ -1,6 +1,7 @@
 import SWNActorBase from './base-actor.mjs';
 import SWNShared from '../shared.mjs';
 import { calcMod } from '../../helpers/utils.mjs';
+import { averageHitDie } from '../../helpers/averaged-hit-dice.mjs';
 
 export default class SWNCharacter extends SWNActorBase {
   static LOCALIZATION_PREFIXES = [
@@ -410,13 +411,34 @@ export default class SWNCharacter extends SWNActorBase {
     const hd = this.hitDie;
 
     const constBonus = this.stats.con.mod;
-    const perLevel = `max(${hd} + ${constBonus}, 1)`;
+
+    // When the Averaged Hit Dice setting is on, roll each hit die as two
+    // half-sized dice (d6 -> 2d3, ...) to tighten HP variance. Unsupported
+    // dice fall through to the normal roll with a notification.
+    let dieForRoll = hd;
+    let averagedLabel = null;
+    if (game.settings.get("swnr", "useAveragedHitDice")) {
+      const averaged = averageHitDie(hd);
+      if (averaged.status === "transformed") {
+        dieForRoll = averaged.formula;
+        averagedLabel = averaged.label;
+      } else if (averaged.status === "unsupported") {
+        ui.notifications?.info(
+          `Averaged Hit Dice isn't set up for ${hd}; rolling the normal hit die.`
+        );
+      }
+    }
+
+    const perLevel = `max(${dieForRoll} + ${constBonus}, 1)`;
 
     const _rollHP = async () => {
       const hitArray = Array(currentLevel).fill(perLevel);
       const formula = hitArray.join("+");
 
       let msg = `Rolling Level ${currentLevel} HP: ${formula}<br>(Rolling a hitdice per level, with adding the CON mod. Each roll cannot be less than 1)<br>`;
+      if (averagedLabel) {
+        msg += `Using averaged hit dice: ${averagedLabel} per level<br>`;
+      }
       const roll = new Roll(formula);
       await roll.roll();
       if (roll.total) {
