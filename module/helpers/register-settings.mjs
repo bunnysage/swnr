@@ -50,6 +50,15 @@ export const registerSettings = function () {
     default: false,
   });
 
+  game.settings.register("swnr", "useAveragedHitDice", {
+    name: "swnr.settings.useAveragedHitDice",
+    hint: "swnr.settings.useAveragedHitDiceHint",
+    scope: "world",
+    config: true,
+    type: Boolean,
+    default: false,
+  });
+
   game.settings.register("swnr", "useRollNPCHD", {
     name: "swnr.settings.useRollNPCHD",
     hint: "swnr.settings.useRollNPCHDHint",
@@ -348,6 +357,7 @@ export const getGameSettings = function () {
   let settings = {
     systemMigrationVersion: game.settings.get("swnr", "systemMigrationVersion"),
     useHomebrewLuckSave: game.settings.get("swnr", "useHomebrewLuckSave"),
+    useAveragedHitDice: game.settings.get("swnr", "useAveragedHitDice"),
     useRollNPCHD: game.settings.get("swnr", "useRollNPCHD"),
     addShockMessage: game.settings.get("swnr", "addShockMessage"),
     //showTempAttrMod: game.settings.get("swnr", "showTempAttrMod"),
